@@ -1,8 +1,10 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { activityStateFromUrl, isValidClientId } = require('../src/discord-presence');
+const { DEFAULT_CLIENT_ID, activityStateFromUrl, isValidClientId } = require('../src/discord-presence');
 
 test('validates Discord snowflake application ids', () => {
+  assert.equal(DEFAULT_CLIENT_ID, '1563797886087463012');
+  assert.equal(isValidClientId(DEFAULT_CLIENT_ID), true);
   assert.equal(isValidClientId('12345678901234567'), true);
   assert.equal(isValidClientId('12345678901234567890'), true);
   assert.equal(isValidClientId('not-a-client-id'), false);

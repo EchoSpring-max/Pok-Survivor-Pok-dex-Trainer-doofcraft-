@@ -6,7 +6,6 @@ const elements = {
   statusDot: document.querySelector('#status-dot'),
   sidebarToggle: document.querySelector('#toggle-sidebar'),
   rpcEnabled: document.querySelector('#rpc-enabled'),
-  rpcClientId: document.querySelector('#rpc-client-id'),
   rpcStatus: document.querySelector('#rpc-status'),
   rpcDot: document.querySelector('#rpc-dot')
 };
@@ -91,7 +90,6 @@ function renderGameStatus(status) {
 
 function renderRpcState(state) {
   elements.rpcEnabled.checked = state.enabled;
-  if (document.activeElement !== elements.rpcClientId) elements.rpcClientId.value = state.clientId || '';
   elements.rpcDot.className = `rpc-dot ${state.status}`;
   elements.rpcStatus.textContent = state.message;
 }
@@ -114,21 +112,11 @@ document.querySelector('#devtools').addEventListener('click', () => window.deskt
 document.querySelector('#stop-all').addEventListener('click', () => withError(() => window.desktop.stopAll()));
 document.querySelector('#folder').addEventListener('click', () => window.desktop.openScriptsFolder());
 document.querySelector('#clear-log').addEventListener('click', () => elements.log.replaceChildren());
-document.querySelector('#rpc-save').addEventListener('click', () => withError(async () => {
-  const state = await window.desktop.configureRpc({
-    enabled: elements.rpcEnabled.checked,
-    clientId: elements.rpcClientId.value
-  });
-  renderRpcState(state);
-  addLog(state.enabled ? 'Discord Rich Presence settings saved.' : 'Discord Rich Presence disabled.', 'info');
-}));
 elements.rpcEnabled.addEventListener('change', () => withError(async () => {
   renderRpcState(await window.desktop.configureRpc({
-    enabled: elements.rpcEnabled.checked,
-    clientId: elements.rpcClientId.value
+    enabled: elements.rpcEnabled.checked
   }));
 }));
-document.querySelector('#rpc-portal').addEventListener('click', () => window.desktop.openDiscordDeveloperPortal());
 elements.sidebarToggle.addEventListener('click', () => {
   withError(() => setSidebarCollapsed(!document.body.classList.contains('sidebar-collapsed')));
 });

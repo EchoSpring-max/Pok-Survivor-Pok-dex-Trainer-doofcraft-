@@ -180,7 +180,6 @@ function registerIpc() {
   });
   ipcMain.handle('rpc:get-state', () => discordPresence.publicState());
   ipcMain.handle('rpc:configure', (_event, settings) => discordPresence.configure(settings));
-  ipcMain.handle('rpc:open-developer-portal', () => shell.openExternal('https://discord.com/developers/applications'));
 }
 
 function createWindow() {

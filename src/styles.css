@@ -102,12 +102,7 @@ body.sidebar-collapsed .sidebar-toggle { position: absolute; visibility: visible
 .rpc-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); }
 .rpc-dot.connecting, .rpc-dot.waiting { background: var(--amber); }
 .rpc-dot.error { background: var(--red); }
-.rpc-form { display: flex; gap: 6px; }
-.rpc-form input { min-width: 0; flex: 1; color: #e7eaec; background: #0e1418; border: 1px solid #34424a; border-radius: 6px; padding: 7px 8px; outline: none; font: 10px ui-monospace, SFMono-Regular, Consolas, monospace; }
-.rpc-form input:focus { border-color: #7289da; }
-.rpc-form button { flex: 0 0 auto; padding: 7px 10px; border-radius: 6px; color: #f2f4ff; background: #5865f2; font-size: 10px; font-weight: 800; }
-.rpc-help { margin-top: 6px; padding: 0; color: #788ba2; background: transparent; font-size: 9px; }
-.rpc-help:hover { color: #a8b9cd; }
+.rpc-app-name { color: #697986; font-size: 9px; }
 
 .activity-section { flex: 0 0 118px; min-height: 0; border-top: 1px solid var(--line); padding-top: 10px; }
 .activity-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; }

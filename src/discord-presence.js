@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 
 const RETRY_DELAY_MS = 15_000;
+const DEFAULT_CLIENT_ID = '1563797886087463012';
 
 function isValidClientId(value) {
   return /^\d{17,20}$/.test(String(value || '').trim());
@@ -34,11 +35,11 @@ class DiscordPresence {
     try {
       const value = JSON.parse(fs.readFileSync(this.settingsPath, 'utf8'));
       return {
-        enabled: value.enabled === true,
-        clientId: isValidClientId(value.clientId) ? String(value.clientId) : ''
+        enabled: value.enabled !== false,
+        clientId: DEFAULT_CLIENT_ID
       };
     } catch {
-      return { enabled: false, clientId: '' };
+      return { enabled: true, clientId: DEFAULT_CLIENT_ID };
     }
   }
 
@@ -58,12 +59,8 @@ class DiscordPresence {
     this.onState?.(this.publicState());
   }
 
-  async configure({ enabled, clientId }) {
-    const normalizedId = String(clientId || '').trim();
-    if (normalizedId && !isValidClientId(normalizedId)) {
-      throw new Error('Discord Application ID must contain 17–20 digits.');
-    }
-    this.settings = { enabled: Boolean(enabled), clientId: normalizedId };
+  async configure({ enabled }) {
+    this.settings = { enabled: Boolean(enabled), clientId: DEFAULT_CLIENT_ID };
     this.saveSettings();
     await this.disconnect();
     this.start();
@@ -78,10 +75,6 @@ class DiscordPresence {
   start() {
     if (!this.settings.enabled) {
       this.publishState('disabled', 'Discord Rich Presence is off.');
-      return;
-    }
-    if (!this.settings.clientId) {
-      this.publishState('needs-id', 'Add a Discord Application ID to connect.');
       return;
     }
     this.connect();
@@ -163,4 +156,4 @@ class DiscordPresence {
   }
 }
 
-module.exports = { DiscordPresence, activityStateFromUrl, isValidClientId };
+module.exports = { DEFAULT_CLIENT_ID, DiscordPresence, activityStateFromUrl, isValidClientId };

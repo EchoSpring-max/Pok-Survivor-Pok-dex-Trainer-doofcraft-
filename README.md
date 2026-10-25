@@ -13,7 +13,7 @@ An unofficial Windows desktop client for [PokéSurvivor](https://pokesurvivor.do
 
 ## Discord Rich Presence
 
-Rich Presence requires a Discord Application ID. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications), copy its Application ID from **General Information**, and paste it into the client. The ID is public metadata, not a bot token or secret. Keep the Discord desktop app running; the client reconnects automatically when Discord restarts.
+Rich Presence is preconfigured and enabled by default. Keep the Discord desktop app running; the client reconnects automatically when Discord restarts. The sidebar toggle can disable the presence at any time.
 
 ## Development
 
