@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PokéSurvivor • Pokédex Trainer
 // @namespace    https://github.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-
-// @version      1.8.4
+// @version      1.8.5
 // @description  Unofficial Pokédex-style trainer featuring gameplay controls, AFK tools and customizable auto-upgrades.
 // @author       EchoSpring-max
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACP0lEQVR42u2bPU4DMRCFdy0XkVIBUiQQcABaThBRcwg67kDNHeg4RGrECWg5ACCQIgEVEh1UiSzHsT32G//FU0FY7Pme39gTyTsMPXrsdIwh/3R9cPxXIszd59vIJkCp0LFiiBbhKTmPIQNdzWZFQt8vl2QnjBT4UsFdQthEEK3Bm3K1lYNoDZ4qgmgRniKCpAyAiKP9Pecz71/fUBFMm6OXACmhtz2PFMN5CqgWQaw+FZzTFaoL1FNBlrDilDHRjhA1wHOOL2sB53KDqA0ePa+oFR41vxh2PETNq4/IQ9QOH5tPL4EWVj8mr513gMy1+uevHxufPZ0cQlxAaZBkasVN4PrfEEIUWQI2+JDnkgsQY38qVIwIlDxlqqRMcfvwuP755mIOnW8xnZR9Cqjwpt+b3ANcsDlE6J1gFyBDmDY82+dNOkCHzQEf1Qm+PNM2rNOzOXnFEXNAHaCerdTJqDAx8L49QPIS8IWiwmcpgVgRTA5KCR4swGI6GS5/ftcQoUkjYUPt3/uAUAFiNkN0xKw+zAG5REDMGyxAiNqcEZqPQE2a2gWx1mfZBFOJgJxHIqy3OhbV5DjOdBN4bCkKrvpDu4EDHtoJrpJBu4ELnK0V1ktCh/ARw+Ye9OmzcYcWeVNMFyLHMTcM22+IsX8ZMpVFaf2GdCmHuC+oQviIgYS23RI1loBeBohSyBU+1+aNx6D+oEvFWuGtfUDNIlBemOivzPgMXONLUz7w3q1wyPt4NcB7O6AWR9S4UD16ZI5/0YX0gyZhTxcAAAAASUVORK5CYII=
@@ -16,17 +16,17 @@
 (() => {
   'use strict';
   const NativeWorker = window.Worker;
-  const signature = 'iy=(e,t)=>t.baseAttack*t.attackMul*';
+  const damageSignature = /([A-Za-z_$][\w$]*=\(e,t\)=>t\.baseAttack\*t\.attackMul)\*/;
   const speedSignature = 'baseSpeed:a.speed,baseAttack:a.attack';
   let speed = Number(localStorage.getItem('ps-speed-multiplier') || '1');
   if (!Number.isFinite(speed) || speed < 1 || speed > 20) speed = 1;
   const candySignature = 'case`candy-corn`:t.sharedCandyCorn===!1?n.stats.candyCorn=(n.stats.candyCorn??0)+t.value:r.team.candyCorn=(r.team.candyCorn??0)+t.value;return;';
   let candy = Number(localStorage.getItem('ps-candy-multiplier') || '1');
   if (!Number.isInteger(candy) || candy < 1 || candy > 100) candy = 1;
-  const godSignature = 'function xy(e,t,n,r,a){if(t.hp-=n,';
-  const godReplacement = 'function xy(e,t,n,r,a){if(n=0,t.hp-=n,';
+  const godSignature = /(function [A-Za-z_$][\w$]*\(e,t,n,r,a\)\{if\()t\.hp-=n,/;
   let god = localStorage.getItem('ps-trainer-god') !== 'false';
   let status = 'Waiting for battle worker';
+  const desktopClient = globalThis.__pokesurvivorDesktopScripts instanceof Map;
   let multiplier = Number(localStorage.getItem('ps-damage-multiplier') || '5');
   if (!Number.isFinite(multiplier) || multiplier < 1 || multiplier > 1000) multiplier = 5;
   function update() { const el = document.getElementById('ps-damage-status'); if (el) el.textContent = status; }
@@ -39,14 +39,23 @@
         const xhr = new XMLHttpRequest();
         xhr.open('GET', url.href, false);
         xhr.send();
-        if (xhr.status !== 200 || xhr.responseText.split(signature).length !== 2 || xhr.responseText.split(speedSignature).length !== 2 || (god && xhr.responseText.split(godSignature).length !== 2) || (candy !== 1 && xhr.responseText.split(candySignature).length !== 2)) {
-          status = 'Worker found, one or more patch signatures missing'; update();
+        if (xhr.status !== 200) {
+          status = `Worker request failed (${xhr.status || 'network error'})`; update();
           return Reflect.construct(Target, args);
         }
-        let source = xhr.responseText.replace(signature, `iy=(e,t)=>t.baseAttack*(t.attackMul*${multiplier})*`);
+        const missing = [];
+        if (!damageSignature.test(xhr.responseText)) missing.push('damage');
+        if (!xhr.responseText.includes(speedSignature)) missing.push('speed');
+        if (god && !godSignature.test(xhr.responseText)) missing.push('god mode');
+        if (candy !== 1 && !xhr.responseText.includes(candySignature)) missing.push('candy');
+        if (missing.length) {
+          status = `Worker found; outdated patch: ${missing.join(', ')}`; update();
+          return Reflect.construct(Target, args);
+        }
+        let source = xhr.responseText.replace(damageSignature, `$1*${multiplier}*`);
         source = source.replace(speedSignature, `baseSpeed:a.speed*${speed},baseAttack:a.attack`);
         if (candy !== 1) source = source.replace(candySignature, candySignature.replaceAll('t.value', `(t.value*${candy})`));
-        if (god) source = source.replace(godSignature, godReplacement);
+        if (god) source = source.replace(godSignature, '$1n=0,t.hp-=n,');
         const blobUrl = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
         const worker = Reflect.construct(Target, [blobUrl, args[1]]);
         setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
@@ -123,8 +132,23 @@
     const candyInput = document.createElement('input'); candyInput.type = 'number'; candyInput.min = '1'; candyInput.max = '100'; candyInput.step = '1'; candyInput.value = String(candy); candyInput.style.cssText = 'width:75px;margin-left:6px;padding:4px';
     candyRow.append(candyLabel, candyInput); content.append(candyRow);
     const candyNote = document.createElement('div'); candyNote.textContent = 'Experimental: modifies collected candy pickups locally. Server may reject or recalculate rewards.'; candyNote.style.cssText = 'font-size:11px;color:#fbbf24;margin-top:5px;max-width:240px'; content.append(candyNote);
-    const apply = document.createElement('button'); apply.textContent = 'Save & reload'; apply.style.cssText = 'margin-top:10px;padding:6px 12px;cursor:pointer';
-    apply.onclick = () => { const n = Number(input.value); if (!Number.isInteger(n) || n < 1 || n > 1000) {status='Choose a whole number from 1 to 1000';update();return;} const sp = Number(speedInput.value); if (!Number.isFinite(sp) || sp < 1 || sp > 20) {status='Choose movement speed from 1 to 20';update();return;} const ca = Number(candyInput.value); if (!Number.isInteger(ca) || ca < 1 || ca > 100) {status='Choose Candy Corn multiplier from 1 to 100';update();return;} localStorage.setItem('ps-candy-multiplier', String(ca)); localStorage.setItem('ps-speed-multiplier', String(sp)); localStorage.setItem('ps-damage-multiplier', String(n)); localStorage.setItem('ps-trainer-god', String(godBox.checked)); location.reload(); };
+    const apply = document.createElement('button'); apply.textContent = desktopClient ? 'Save settings' : 'Save & reload'; apply.style.cssText = 'margin-top:10px;padding:6px 12px;cursor:pointer';
+    apply.onclick = () => {
+      const n = Number(input.value);
+      if (!Number.isInteger(n) || n < 1 || n > 1000) {status='Choose a whole number from 1 to 1000';update();return;}
+      const sp = Number(speedInput.value);
+      if (!Number.isFinite(sp) || sp < 1 || sp > 20) {status='Choose movement speed from 1 to 20';update();return;}
+      const ca = Number(candyInput.value);
+      if (!Number.isInteger(ca) || ca < 1 || ca > 100) {status='Choose Candy Corn multiplier from 1 to 100';update();return;}
+      localStorage.setItem('ps-candy-multiplier', String(ca));
+      localStorage.setItem('ps-speed-multiplier', String(sp));
+      localStorage.setItem('ps-damage-multiplier', String(n));
+      localStorage.setItem('ps-trainer-god', String(godBox.checked));
+      if (desktopClient) {
+        status = 'Settings saved. Press Run in the client once to apply them.';
+        update();
+      } else location.reload();
+    };
     content.append(apply);
     const note = document.createElement('div'); note.id='ps-damage-status'; note.textContent=status; note.style.cssText='font-size:11px;color:#cbd5e1;margin-top:12px;max-width:240px'; content.append(note);
     const hint = document.createElement('div'); hint.textContent='Drag the title to move; use − to minimize. F8 toggles menu.'; hint.style.cssText='font-size:11px;color:#fbbf24;margin-top:8px'; content.append(hint);

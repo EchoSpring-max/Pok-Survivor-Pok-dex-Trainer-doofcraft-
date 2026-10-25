@@ -51,7 +51,7 @@ See [`examples/hello-overlay.js`](examples/hello-overlay.js) for a complete harm
 
 ## Existing userscript
 
-This repository also retains [`PokeSurvivor-Pokedex-Trainer.js`](PokeSurvivor-Pokedex-Trainer.js), the original standalone Tampermonkey trainer. It is not bundled into the desktop executable or enabled automatically. If you choose to use it, review the source, import it manually, and follow the game's rules.
+The current standalone trainer is [`PokeSurvivor-Pokedex-Trainer.user.js`](PokeSurvivor-Pokedex-Trainer.user.js). The `.js` copy is retained for compatibility. It is not bundled into the desktop executable or enabled automatically. If you choose to use it, review the source, import it manually, and follow the game's rules.
 
 ## Security note
 
