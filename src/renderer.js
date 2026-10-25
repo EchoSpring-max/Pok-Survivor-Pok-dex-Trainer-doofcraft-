@@ -58,13 +58,13 @@ function renderScripts(scripts) {
     name.title = script.filename;
     const meta = document.createElement('div');
     meta.className = 'script-meta';
-    meta.textContent = `${formatSize(script.size)} · ${script.enabled ? 'autorun on' : 'manual'}`;
+    meta.textContent = `${formatSize(script.size)} · ${script.enabled ? 'run at startup' : 'manual'}`;
     info.append(name, meta);
     const toggle = makeButton('', `switch${script.enabled ? ' active' : ''}`, async () => {
       await window.desktop.toggleScript(script.id, !script.enabled);
-      addLog(`${script.name}: autorun ${script.enabled ? 'disabled' : 'enabled'}.`);
+      addLog(`${script.name}: startup ${script.enabled ? 'disabled' : 'enabled'}.`);
     });
-    toggle.title = script.enabled ? 'Disable autorun' : 'Enable autorun';
+    toggle.title = script.enabled ? 'Do not run at next client startup' : 'Run at next client startup';
     top.append(info, toggle);
 
     const controls = document.createElement('div');
@@ -137,7 +137,7 @@ async function setSidebarCollapsed(collapsed) {
 
 document.querySelector('#import').addEventListener('click', () => withError(async () => {
   const result = await window.desktop.importScript();
-  if (!result.canceled) addLog('Script imported. Review it before enabling autorun.', 'success');
+  if (!result.canceled) addLog('Script imported. Review it before enabling startup.', 'success');
 }));
 document.querySelector('#home').addEventListener('click', () => window.desktop.goHome());
 document.querySelector('#reload').addEventListener('click', () => window.desktop.reloadGame());

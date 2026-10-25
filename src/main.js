@@ -29,6 +29,7 @@ let currentGameStatus = { state: 'loading' };
 let sidebarCollapsed = false;
 let storageFlushedForQuit = false;
 let audioState = { muted: false, volume: 1 };
+let startupScriptsLoaded = false;
 
 function emit(channel, payload) {
   if (!shellView?.webContents.isDestroyed()) shellView.webContents.send(channel, payload);
@@ -133,12 +134,14 @@ async function stopAllScripts() {
     if (script.enabled) store.setEnabled(script.id, false);
   }
   emit('scripts-changed', store.list());
-  emit('script-event', { level: 'info', message: 'Stopped all scripts and disabled autorun.' });
+  emit('script-event', { level: 'info', message: 'Stopped all scripts and disabled startup.' });
 }
 
-async function runEnabledScripts() {
+async function runStartupScriptsOnce() {
+  if (startupScriptsLoaded) return;
+  startupScriptsLoaded = true;
   const enabled = store.list().filter((script) => script.enabled);
-  for (const script of enabled) await runScript(script.id, 'autorun');
+  for (const script of enabled) await runScript(script.id, 'startup');
   emit('scripts-changed', store.list());
 }
 
@@ -188,7 +191,7 @@ function registerIpc() {
     await stopScript(id);
     store.setEnabled(id, false);
     emit('scripts-changed', store.list());
-    emit('script-event', { level: 'info', message: 'Script stopped and autorun disabled.' });
+    emit('script-event', { level: 'info', message: 'Script stopped and startup disabled.' });
     return { ok: true };
   });
   ipcMain.handle('scripts:toggle', async (_event, id, enabled) => {
@@ -273,7 +276,7 @@ function createWindow() {
     setGameStatus({ state: 'ready', url: gameView.webContents.getURL() });
     discordPresence.setPage(gameView.webContents.getURL());
     await applyAudioState();
-    await runEnabledScripts();
+    await runStartupScriptsOnce();
   });
   gameView.webContents.on('did-stop-loading', () => {
     setGameStatus({ state: 'ready', url: gameView.webContents.getURL() });
