@@ -118,6 +118,8 @@ class DiscordPresence {
         details: 'Playing PokéSurvivor',
         state: activityStateFromUrl(this.pageUrl),
         startTimestamp: this.startedAt,
+        largeImageKey: 'pokeicon-large',
+        largeImageText: 'PokéSurvivor Desktop',
         buttons: [{ label: 'Play PokéSurvivor', url: 'https://pokesurvivor.doofcraft.com/' }],
         instance: false
       });
