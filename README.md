@@ -1,31 +1,55 @@
-# PokéSurvivor Pokédex Trainer
+# PokéSurvivor Desktop
 
-Unofficial community-made Tampermonkey userscript for [PokéSurvivor](https://pokesurvivor.doofcraft.com/).
-
-## Install
-
-1. Install [Tampermonkey](https://www.tampermonkey.net/).
-2. [Install the userscript](https://raw.githubusercontent.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-/main/PokeSurvivor-Pokedex-Trainer.user.js) after the file has been uploaded to this repository.
-3. Open PokéSurvivor and press **Alt + G** to open the menu.
-4. Disable older trainer versions in Tampermonkey to avoid conflicts.
+An unofficial Windows desktop client for [PokéSurvivor](https://pokesurvivor.doofcraft.com/) with a built-in local JavaScript loader.
 
 ## Features
 
-- Pokédex-inspired draggable, minimizable interface
-- Configurable damage and movement speed
-- Experimental God Mode
-- AFK controls and auto-upgrade selection
-- Upgrade preferences, rerolls, and selection delay
-- Persistent settings
+- Isolated game view with Node.js disabled, context isolation, sandboxing, origin-locked navigation, blocked popups, and denied permission requests.
+- Local `.js` imports only; the client never downloads scripts from a URL.
+- Manual run/stop, opt-in autorun after navigation, reload/home controls, detached developer console, and an emergency stop-all action.
+- Per-script cleanup: return a function from a script and the client calls it when the script is stopped, disabled, rerun, or removed.
+- Persistent game session and script preferences.
 
-## Limitations
+## Development
 
-The Candy Corn pickup multiplier changes local values but **does not increase server-credited rewards**. AFK controls and gameplay modifications are experimental and may break after game updates. Check the game's rules before use.
+```powershell
+npm install
+npm test
+npm start
+```
 
-## Updates and support
+Create a portable Windows executable:
 
-The userscript includes `@downloadURL` and `@updateURL` metadata for Tampermonkey. Submit bug reports through [GitHub Issues](https://github.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-/issues). Never share authentication cookies or unredacted HAR files.
+```powershell
+npm run dist
+```
+
+The build is written to `outputs/`.
+
+## Script format
+
+Scripts execute in the PokéSurvivor page. Add an optional display name and return an optional cleanup function:
+
+```js
+// @name My UI tweak
+
+const element = document.createElement('div');
+element.textContent = 'Hello';
+document.body.appendChild(element);
+
+return () => element.remove();
+```
+
+See [`examples/hello-overlay.js`](examples/hello-overlay.js) for a complete harmless example.
+
+## Existing userscript
+
+This repository also retains [`PokeSurvivor-Pokedex-Trainer.js`](PokeSurvivor-Pokedex-Trainer.js), the original standalone Tampermonkey trainer. It is not bundled into the desktop executable or enabled automatically. If you choose to use it, review the source, import it manually, and follow the game's rules.
+
+## Security note
+
+A loaded script has the same page access as code running on the game website, including access to visible game state and browser storage. Only run scripts you understand and trust. The desktop client deliberately does not include a remote script marketplace, URL installer, or bundled game automation.
 
 ## Disclaimer
 
-Unofficial fan project, not affiliated with PokéSurvivor, Doofcraft, Nintendo, Game Freak, or The Pokémon Company. No warranty is provided.
+This community project is not affiliated with DoofCraft, PokéSurvivor, Nintendo, Creatures Inc., GAME FREAK, or The Pokémon Company. Follow the game's rules when using custom scripts.

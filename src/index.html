@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self'; img-src 'self' data:" />
+    <title>PokéSurvivor Desktop</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main>
+      <header class="brand">
+        <div class="brand-mark" aria-hidden="true"><span></span></div>
+        <div>
+          <p class="eyebrow">UNOFFICIAL CLIENT</p>
+          <h1>PokéSurvivor</h1>
+          <p class="subtitle">Desktop toolkit</p>
+        </div>
+      </header>
+
+      <section class="status-card">
+        <div>
+          <p class="label">Game status</p>
+          <p id="status-text">Connecting…</p>
+        </div>
+        <span id="status-dot" class="status-dot loading"></span>
+      </section>
+
+      <nav class="toolbar" aria-label="Game controls">
+        <button id="home" class="tool-button" title="Return to the game home">⌂<span>Home</span></button>
+        <button id="reload" class="tool-button" title="Reload the game">↻<span>Reload</span></button>
+        <button id="devtools" class="tool-button" title="Open game developer tools">⌘<span>Console</span></button>
+      </nav>
+
+      <section class="scripts-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">LOCAL ONLY</p>
+            <h2>Script loader</h2>
+          </div>
+          <button id="import" class="primary-button">+ Import</button>
+        </div>
+
+        <p class="warning">Scripts run with access to the game page and your signed-in session. Only import code you have reviewed and trust.</p>
+
+        <div id="script-list" class="script-list" aria-live="polite"></div>
+        <div id="empty-state" class="empty-state">
+          <div class="empty-icon">JS</div>
+          <p>No scripts imported</p>
+          <span>Add a local .js file to get started.</span>
+        </div>
+      </section>
+
+      <section class="actions">
+        <button id="stop-all" class="danger-button">■ Stop all scripts</button>
+        <button id="folder" class="secondary-button">Open scripts folder</button>
+      </section>
+
+      <section class="activity-section">
+        <div class="activity-heading">
+          <h2>Activity</h2>
+          <button id="clear-log">Clear</button>
+        </div>
+        <div id="log" class="log" aria-live="polite"></div>
+      </section>
+
+      <footer>Scripts that return a function can clean up when stopped. This project is not affiliated with DoofCraft or Pokémon.</footer>
+    </main>
+    <script src="renderer.js"></script>
+  </body>
+</html>

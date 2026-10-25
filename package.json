@@ -1,0 +1,44 @@
+{
+  "name": "pokesurvivor-desktop",
+  "version": "1.0.0",
+  "description": "An unofficial, security-conscious desktop client for PokéSurvivor with a local script loader.",
+  "main": "src/main.js",
+  "author": "Community project",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "node --test",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/script-store.js",
+    "dist": "electron-builder --win portable",
+    "dist:installer": "electron-builder --win nsis"
+  },
+  "devDependencies": {
+    "electron": "^38.2.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.community.pokesurvivor.desktop",
+    "productName": "PokéSurvivor Desktop",
+    "asar": true,
+    "files": [
+      "src/**/*",
+      "package.json",
+      "LICENSE"
+    ],
+    "directories": {
+      "output": "outputs"
+    },
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "artifactName": "PokeSurvivor-Desktop-${version}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
