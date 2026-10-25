@@ -19,13 +19,29 @@
         </div>
       </header>
 
-      <section class="status-card">
-        <div>
-          <p class="label">Game status</p>
-          <p id="status-text">Connecting…</p>
-        </div>
-        <span id="status-dot" class="status-dot loading"></span>
-      </section>
+      <div class="top-status-row">
+        <section class="status-card">
+          <div>
+            <p class="label">Game status</p>
+            <p id="status-text">Connecting…</p>
+          </div>
+          <span id="status-dot" class="status-dot loading"></span>
+        </section>
+
+        <section class="rpc-section">
+          <div class="rpc-heading">
+            <p class="label">Discord</p>
+            <label class="rpc-switch" title="Enable Discord Rich Presence">
+              <input id="rpc-enabled" type="checkbox" />
+              <span></span>
+            </label>
+          </div>
+          <div class="rpc-status-row">
+            <span id="rpc-dot" class="rpc-dot disabled"></span>
+            <span id="rpc-status">Off</span>
+          </div>
+        </section>
+      </div>
 
       <nav class="toolbar" aria-label="Game controls">
         <button id="home" class="tool-button" title="Return to the game home">⌂<span>Home</span></button>
@@ -59,24 +75,6 @@
             <button id="folder" class="secondary-button">Open scripts folder</button>
           </section>
         </div>
-      </section>
-
-      <section class="rpc-section">
-        <div class="rpc-heading">
-          <div>
-            <p class="eyebrow">DISCORD</p>
-            <h2>Rich Presence</h2>
-          </div>
-          <label class="rpc-switch" title="Enable Discord Rich Presence">
-            <input id="rpc-enabled" type="checkbox" />
-            <span></span>
-          </label>
-        </div>
-        <div class="rpc-status-row">
-          <span id="rpc-dot" class="rpc-dot disabled"></span>
-          <span id="rpc-status">Not configured</span>
-        </div>
-        <p class="rpc-app-name">PokéSurvivor Desktop</p>
       </section>
 
       <section class="activity-section">

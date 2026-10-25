@@ -91,7 +91,14 @@ function renderGameStatus(status) {
 function renderRpcState(state) {
   elements.rpcEnabled.checked = state.enabled;
   elements.rpcDot.className = `rpc-dot ${state.status}`;
-  elements.rpcStatus.textContent = state.message;
+  const labels = {
+    connected: 'Active',
+    connecting: 'Connecting',
+    waiting: 'Waiting',
+    disabled: 'Off'
+  };
+  elements.rpcStatus.textContent = labels[state.status] || 'Unavailable';
+  elements.rpcStatus.title = state.message;
 }
 
 async function setSidebarCollapsed(collapsed) {
