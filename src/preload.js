@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('desktop', {
   goHome: () => ipcRenderer.invoke('game:home'),
   openDevTools: () => ipcRenderer.invoke('game:devtools'),
   getGameStatus: () => ipcRenderer.invoke('game:status'),
+  setSidebarCollapsed: (collapsed) => ipcRenderer.invoke('ui:set-sidebar-collapsed', collapsed),
   onScriptsChanged: (callback) => ipcRenderer.on('scripts-changed', (_event, scripts) => callback(scripts)),
   onScriptEvent: (callback) => ipcRenderer.on('script-event', (_event, entry) => callback(entry)),
   onGameStatus: (callback) => ipcRenderer.on('game-status', (_event, status) => callback(status))

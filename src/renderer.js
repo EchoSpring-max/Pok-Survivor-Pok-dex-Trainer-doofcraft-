@@ -4,11 +4,10 @@ const elements = {
   log: document.querySelector('#log'),
   statusText: document.querySelector('#status-text'),
   statusDot: document.querySelector('#status-dot'),
-  scriptsSection: document.querySelector('.scripts-section'),
-  scriptsToggle: document.querySelector('#toggle-scripts')
+  sidebarToggle: document.querySelector('#toggle-sidebar')
 };
 
-const SCRIPT_SECTION_STORAGE_KEY = 'pokesurvivor-desktop:scripts-collapsed';
+const SIDEBAR_STORAGE_KEY = 'pokesurvivor-desktop:sidebar-collapsed';
 
 function formatSize(bytes) {
   return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
@@ -86,11 +85,12 @@ function renderGameStatus(status) {
     : status.state === 'loading' ? 'Loading game…' : status.message || 'Connection error';
 }
 
-function setScriptsCollapsed(collapsed) {
-  elements.scriptsSection.classList.toggle('collapsed', collapsed);
-  elements.scriptsToggle.setAttribute('aria-expanded', String(!collapsed));
-  elements.scriptsToggle.title = collapsed ? 'Expand script loader' : 'Collapse script loader';
-  localStorage.setItem(SCRIPT_SECTION_STORAGE_KEY, String(collapsed));
+async function setSidebarCollapsed(collapsed) {
+  document.body.classList.toggle('sidebar-collapsed', collapsed);
+  elements.sidebarToggle.setAttribute('aria-expanded', String(!collapsed));
+  elements.sidebarToggle.title = collapsed ? 'Expand sidebar' : 'Collapse sidebar';
+  localStorage.setItem(SIDEBAR_STORAGE_KEY, String(collapsed));
+  await window.desktop.setSidebarCollapsed(collapsed);
 }
 
 document.querySelector('#import').addEventListener('click', () => withError(async () => {
@@ -103,8 +103,8 @@ document.querySelector('#devtools').addEventListener('click', () => window.deskt
 document.querySelector('#stop-all').addEventListener('click', () => withError(() => window.desktop.stopAll()));
 document.querySelector('#folder').addEventListener('click', () => window.desktop.openScriptsFolder());
 document.querySelector('#clear-log').addEventListener('click', () => elements.log.replaceChildren());
-elements.scriptsToggle.addEventListener('click', () => {
-  setScriptsCollapsed(!elements.scriptsSection.classList.contains('collapsed'));
+elements.sidebarToggle.addEventListener('click', () => {
+  withError(() => setSidebarCollapsed(!document.body.classList.contains('sidebar-collapsed')));
 });
 
 window.desktop.onScriptsChanged(renderScripts);
@@ -112,7 +112,7 @@ window.desktop.onScriptEvent((entry) => addLog(entry.message, entry.level));
 window.desktop.onGameStatus(renderGameStatus);
 
 withError(async () => {
-  setScriptsCollapsed(localStorage.getItem(SCRIPT_SECTION_STORAGE_KEY) === 'true');
+  await setSidebarCollapsed(localStorage.getItem(SIDEBAR_STORAGE_KEY) === 'true');
   const [scripts, gameStatus] = await Promise.all([
     window.desktop.listScripts(),
     window.desktop.getGameStatus()

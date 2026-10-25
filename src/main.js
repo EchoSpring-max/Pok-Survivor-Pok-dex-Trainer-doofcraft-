@@ -13,6 +13,7 @@ const { ScriptStore } = require('./script-store');
 const GAME_URL = 'https://pokesurvivor.doofcraft.com/';
 const GAME_ORIGIN = new URL(GAME_URL).origin;
 const SIDEBAR_WIDTH = 344;
+const COLLAPSED_SIDEBAR_WIDTH = 52;
 const MIN_GAME_WIDTH = 720;
 const REGISTRY_KEY = '__pokesurvivorDesktopScripts';
 
@@ -21,6 +22,7 @@ let shellView;
 let gameView;
 let store;
 let currentGameStatus = { state: 'loading' };
+let sidebarCollapsed = false;
 
 function emit(channel, payload) {
   if (!shellView?.webContents.isDestroyed()) shellView.webContents.send(channel, payload);
@@ -34,7 +36,9 @@ function setGameStatus(status) {
 function layout() {
   if (!window || window.isDestroyed()) return;
   const { width, height } = window.getContentBounds();
-  const sidebarWidth = Math.min(SIDEBAR_WIDTH, Math.max(280, width - MIN_GAME_WIDTH));
+  const sidebarWidth = sidebarCollapsed
+    ? COLLAPSED_SIDEBAR_WIDTH
+    : Math.min(SIDEBAR_WIDTH, Math.max(280, width - MIN_GAME_WIDTH));
   shellView.setBounds({ x: 0, y: 0, width: sidebarWidth, height });
   gameView.setBounds({ x: sidebarWidth, y: 0, width: width - sidebarWidth, height });
 }
@@ -164,6 +168,11 @@ function registerIpc() {
   ipcMain.handle('game:home', () => gameView.webContents.loadURL(GAME_URL));
   ipcMain.handle('game:devtools', () => gameView.webContents.openDevTools({ mode: 'detach' }));
   ipcMain.handle('game:status', () => currentGameStatus);
+  ipcMain.handle('ui:set-sidebar-collapsed', (_event, collapsed) => {
+    sidebarCollapsed = Boolean(collapsed);
+    layout();
+    return { collapsed: sidebarCollapsed };
+  });
 }
 
 function createWindow() {
