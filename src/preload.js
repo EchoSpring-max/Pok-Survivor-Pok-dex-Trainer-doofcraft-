@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('desktop', {
   setSidebarCollapsed: (collapsed) => ipcRenderer.invoke('ui:set-sidebar-collapsed', collapsed),
   getRpcState: () => ipcRenderer.invoke('rpc:get-state'),
   configureRpc: (settings) => ipcRenderer.invoke('rpc:configure', settings),
+  setAudio: (state) => ipcRenderer.invoke('audio:set', state),
   onScriptsChanged: (callback) => ipcRenderer.on('scripts-changed', (_event, scripts) => callback(scripts)),
   onScriptEvent: (callback) => ipcRenderer.on('script-event', (_event, entry) => callback(entry)),
   onGameStatus: (callback) => ipcRenderer.on('game-status', (_event, status) => callback(status)),

@@ -49,6 +49,12 @@
         <button id="devtools" class="tool-button" title="Open game developer tools">⌘<span>Console</span></button>
       </nav>
 
+      <section class="audio-controls" aria-label="Game audio controls">
+        <button id="audio-mute" class="audio-mute" title="Mute game audio" aria-pressed="false">♪</button>
+        <input id="audio-volume" type="range" min="0" max="100" value="100" aria-label="Game volume" />
+        <output id="audio-value" for="audio-volume">100%</output>
+      </section>
+
       <section class="scripts-section">
         <div class="section-heading">
           <div>

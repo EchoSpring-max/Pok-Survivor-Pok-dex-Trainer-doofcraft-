@@ -10,6 +10,7 @@ An unofficial Windows desktop client for [PokéSurvivor](https://pokesurvivor.do
 - Per-script cleanup: return a function from a script and the client calls it when the script is stopped, disabled, rerun, or removed.
 - Persistent game login, cookies, site storage, and script preferences across client restarts and upgrades.
 - Optional Discord Rich Presence with reconnect handling, current screen status, elapsed play time, and a play button.
+- Persistent game volume slider and mute control.
 
 ## Discord Rich Presence
 
