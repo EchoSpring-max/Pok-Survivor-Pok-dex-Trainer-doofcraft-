@@ -30,6 +30,7 @@ let sidebarCollapsed = false;
 let storageFlushedForQuit = false;
 let audioState = { muted: false, volume: 1 };
 let startupScriptsLoaded = false;
+let pendingEarlyScriptReports = [];
 
 function emit(channel, payload) {
   if (!shellView?.webContents.isDestroyed()) shellView.webContents.send(channel, payload);
@@ -95,6 +96,36 @@ function buildInjection(script) {
   `;
 }
 
+function buildEarlyInjection(script) {
+  const id = JSON.stringify(script.id);
+  const filename = script.filename.replace(/[^a-zA-Z0-9._-]/g, '-');
+  return `
+    (() => {
+      if (window !== window.top) return;
+      const registryKey = ${JSON.stringify(REGISTRY_KEY)};
+      const registry = globalThis[registryKey] ||= new Map();
+      const entry = { cleanup: null, error: null };
+      registry.set(${id}, entry);
+      try {
+        const result = (() => {
+          "use strict";
+          ${script.contents}
+        })();
+        Promise.resolve(result).then((cleanup) => {
+          entry.cleanup = typeof cleanup === "function" ? cleanup : null;
+        }).catch((error) => {
+          entry.error = error?.message || String(error);
+          console.error(error);
+        });
+      } catch (error) {
+        entry.error = error?.message || String(error);
+        console.error(error);
+      }
+    })()
+    //# sourceURL=pokesurvivor-desktop-startup://${filename}
+  `;
+}
+
 async function runScript(id, reason = 'manual') {
   if (!gameView || gameView.webContents.isDestroyed()) throw new Error('Game view is not ready.');
   const script = store.read(id);
@@ -137,12 +168,51 @@ async function stopAllScripts() {
   emit('script-event', { level: 'info', message: 'Stopped all scripts and disabled startup.' });
 }
 
-async function runStartupScriptsOnce() {
+async function scheduleScriptsForNextDocument(scripts) {
+  if (!scripts.length) return { ok: true };
+  const gameDebugger = gameView.webContents.debugger;
+  try {
+    gameDebugger.attach('1.3');
+    for (const script of scripts) {
+      await gameDebugger.sendCommand('Page.addScriptToEvaluateOnNewDocument', {
+        source: buildEarlyInjection(script)
+      });
+    }
+    pendingEarlyScriptReports.push(...scripts.map(({ id, name }) => ({ id, name })));
+    gameView.webContents.once('dom-ready', () => {
+      if (gameDebugger.isAttached()) gameDebugger.detach();
+    });
+    return { ok: true };
+  } catch (error) {
+    if (gameDebugger.isAttached()) gameDebugger.detach();
+    const message = `Could not prepare document-start scripts: ${error.message}`;
+    emit('script-event', { level: 'error', message });
+    return { ok: false, error: message };
+  }
+}
+
+async function prepareStartupScriptsOnce() {
   if (startupScriptsLoaded) return;
   startupScriptsLoaded = true;
-  const enabled = store.list().filter((script) => script.enabled);
-  for (const script of enabled) await runScript(script.id, 'startup');
-  emit('scripts-changed', store.list());
+  const enabled = store.list().filter((script) => script.enabled).map((script) => store.read(script.id));
+  const early = enabled.filter((script) => script.runAt === 'document-start');
+  const regular = enabled.filter((script) => script.runAt !== 'document-start');
+  await scheduleScriptsForNextDocument(early);
+  return regular;
+}
+
+async function reportEarlyScriptResults() {
+  const reports = pendingEarlyScriptReports.splice(0);
+  for (const script of reports) {
+    try {
+      const error = await gameView.webContents.executeJavaScript(`globalThis[${JSON.stringify(REGISTRY_KEY)}]?.get(${JSON.stringify(script.id)})?.error || null`);
+      emit('script-event', error
+        ? { level: 'error', message: `${script.name}: ${error}` }
+        : { level: 'success', message: `${script.name} ran (document start).` });
+    } catch (error) {
+      emit('script-event', { level: 'error', message: `${script.name}: ${error.message}` });
+    }
+  }
 }
 
 function isAllowedGameUrl(targetUrl) {
@@ -185,6 +255,14 @@ function registerIpc() {
   ipcMain.handle('scripts:run', async (_event, id) => {
     store.setEnabled(id, true);
     emit('scripts-changed', store.list());
+    const script = store.read(id);
+    if (script.runAt === 'document-start') {
+      const prepared = await scheduleScriptsForNextDocument([script]);
+      if (!prepared.ok) return prepared;
+      emit('script-event', { level: 'info', message: `${script.name} needs document start; reloading once to activate it.` });
+      gameView.webContents.reloadIgnoringCache();
+      return { ok: true, reloading: true };
+    }
     return runScript(id, 'remembered');
   });
   ipcMain.handle('scripts:stop', async (_event, id) => {
@@ -230,7 +308,7 @@ function registerIpc() {
   });
 }
 
-function createWindow() {
+async function createWindow() {
   window = new BaseWindow({
     title: 'PokéSurvivor Desktop',
     width: 1440,
@@ -262,7 +340,12 @@ function createWindow() {
 
   window.contentView.addChildView(shellView);
   window.contentView.addChildView(gameView);
+  // Establish the initial CDP target before registering document-start scripts.
+  // Electron may defer debugger commands until the first navigation otherwise.
+  await gameView.webContents.loadURL('about:blank');
   secureGameContents(gameView.webContents);
+
+  const regularStartupScripts = await prepareStartupScriptsOnce() || [];
 
   shellView.webContents.loadFile(path.join(__dirname, 'index.html'));
   shellView.webContents.once('did-finish-load', () => {
@@ -276,7 +359,10 @@ function createWindow() {
     setGameStatus({ state: 'ready', url: gameView.webContents.getURL() });
     discordPresence.setPage(gameView.webContents.getURL());
     await applyAudioState();
-    await runStartupScriptsOnce();
+    await reportEarlyScriptResults();
+    for (const script of regularStartupScripts) await runScript(script.id, 'startup');
+    regularStartupScripts.length = 0;
+    emit('scripts-changed', store.list());
   });
   gameView.webContents.on('did-stop-loading', () => {
     setGameStatus({ state: 'ready', url: gameView.webContents.getURL() });
@@ -296,7 +382,7 @@ function createWindow() {
   layout();
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   store = new ScriptStore(app.getPath('userData'));
   discordPresence = new DiscordPresence(path.join(app.getPath('userData'), 'discord-rpc.json'), (state) => emit('rpc-state', state));
   gameSession = session.fromPartition(GAME_PARTITION);
@@ -305,9 +391,9 @@ app.whenReady().then(() => {
   }
   gameSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   registerIpc();
-  createWindow();
+  await createWindow();
   discordPresence.start();
-  app.on('activate', () => { if (!window) createWindow(); });
+  app.on('activate', async () => { if (!window) await createWindow(); });
 });
 
 app.on('window-all-closed', () => {

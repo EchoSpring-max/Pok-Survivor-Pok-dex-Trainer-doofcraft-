@@ -6,6 +6,7 @@ An unofficial Windows desktop client for [PokéSurvivor](https://pokesurvivor.do
 
 - Isolated game view with Node.js disabled, context isolation, sandboxing, origin-locked navigation, blocked popups, and denied permission requests.
 - Local `.js` imports only; the client never downloads scripts from a URL.
+- Userscripts declaring `@run-at document-start` are injected before the game's own page scripts, so early hooks such as `window.Worker` wrappers work. Pressing Run performs one controlled reload for these scripts.
 - Persistent run/stop state: running a script remembers it for future client launches and runs it once at startup. Page reloads do not automatically run it again; stopping it disables startup. Includes reload/home controls, a detached developer console, and an emergency stop-all action.
 - Per-script cleanup: return a function from a script and the client calls it when the script is stopped, disabled, rerun, or removed.
 - Persistent game login, cookies, site storage, and script preferences across client restarts and upgrades.

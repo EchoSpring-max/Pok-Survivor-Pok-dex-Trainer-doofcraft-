@@ -3,11 +3,13 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { ScriptStore, readTitle, safeFilename, scriptId } = require('../src/script-store');
+const { ScriptStore, readRunAt, readTitle, safeFilename, scriptId } = require('../src/script-store');
 
 test('metadata helpers normalize names and derive stable ids', () => {
   assert.equal(safeFilename('../My unsafe script.js'), 'My-unsafe-script.js');
   assert.equal(readTitle('// @name Better HUD\nconsole.log(1)', 'fallback.js'), 'Better HUD');
+  assert.equal(readRunAt('// @run-at       document-start\nconsole.log(1)'), 'document-start');
+  assert.equal(readRunAt('console.log(1)'), 'document-idle');
   assert.equal(scriptId('hello'), scriptId('hello'));
 });
 
@@ -18,6 +20,7 @@ test('imports, enables, reads, and removes scripts', () => {
   const store = new ScriptStore(path.join(root, 'data'));
   const id = store.import(source);
   assert.equal(store.list()[0].name, 'Sample');
+  assert.equal(store.list()[0].runAt, 'document-idle');
   assert.equal(store.read(id).contents.includes('return'), true);
   store.setEnabled(id, true);
   assert.equal(store.list()[0].enabled, true);

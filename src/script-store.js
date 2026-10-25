@@ -18,6 +18,11 @@ function readTitle(contents, fallback) {
   return match?.[1]?.trim().slice(0, 80) || path.basename(fallback, SCRIPT_EXTENSION);
 }
 
+function readRunAt(contents) {
+  const match = contents.match(/^\s*\/\/\s*@run-at\s+([^\s]+)\s*$/m);
+  return match?.[1]?.trim().toLowerCase() || 'document-idle';
+}
+
 class ScriptStore {
   constructor(rootDirectory) {
     this.rootDirectory = rootDirectory;
@@ -53,6 +58,7 @@ class ScriptStore {
           id,
           filename: entry.name,
           name: readTitle(contents, entry.name),
+          runAt: readRunAt(contents),
           enabled: settings[id]?.enabled === true,
           size: Buffer.byteLength(contents),
           modifiedAt: fs.statSync(filePath).mtime.toISOString()
@@ -109,4 +115,4 @@ class ScriptStore {
   }
 }
 
-module.exports = { ScriptStore, readTitle, safeFilename, scriptId };
+module.exports = { ScriptStore, readRunAt, readTitle, safeFilename, scriptId };
