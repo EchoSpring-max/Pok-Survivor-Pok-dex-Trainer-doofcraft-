@@ -58,7 +58,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .section-heading-actions { display: flex; align-items: center; gap: 6px; }
 .primary-button { background: var(--amber); color: #17120a; border-radius: 7px; padding: 8px 11px; font-size: 11px; font-weight: 850; box-shadow: 0 4px 14px #0005; }
 .primary-button:hover { background: #ffd05e; }
-.sidebar-toggle { position: absolute; z-index: 10; top: 243px; right: 20px; width: 30px; height: 30px; border-radius: 7px; color: #aebbc1; background: var(--surface); border: 1px solid var(--line); font-size: 21px; line-height: 1; font-weight: 800; transition: transform .15s, background .15s; }
+.sidebar-toggle { position: absolute; z-index: 10; top: 30px; right: 20px; width: 30px; height: 30px; border-radius: 7px; color: #aebbc1; background: var(--surface); border: 1px solid var(--line); font-size: 21px; line-height: 1; font-weight: 800; transition: transform .15s, background .15s; }
 .sidebar-toggle:hover { color: var(--text); background: var(--surface-2); border-color: #465861; }
 .scripts-body { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
 body.sidebar-collapsed main { padding: 0; align-items: center; background: linear-gradient(180deg, #151c20, #0d1215); }
