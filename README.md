@@ -8,7 +8,7 @@ An unofficial Windows desktop client for [PokéSurvivor](https://pokesurvivor.do
 - Local `.js` imports only; the client never downloads scripts from a URL.
 - Manual run/stop, opt-in autorun after navigation, reload/home controls, detached developer console, and an emergency stop-all action.
 - Per-script cleanup: return a function from a script and the client calls it when the script is stopped, disabled, rerun, or removed.
-- Persistent game session and script preferences.
+- Persistent game login, cookies, site storage, and script preferences across client restarts and upgrades.
 
 ## Development
 

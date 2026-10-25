@@ -12,6 +12,7 @@ const { ScriptStore } = require('./script-store');
 
 const GAME_URL = 'https://pokesurvivor.doofcraft.com/';
 const GAME_ORIGIN = new URL(GAME_URL).origin;
+const GAME_PARTITION = 'persist:pokesurvivor-desktop';
 const SIDEBAR_WIDTH = 344;
 const COLLAPSED_SIDEBAR_WIDTH = 52;
 const MIN_GAME_WIDTH = 720;
@@ -20,9 +21,11 @@ const REGISTRY_KEY = '__pokesurvivorDesktopScripts';
 let window;
 let shellView;
 let gameView;
+let gameSession;
 let store;
 let currentGameStatus = { state: 'loading' };
 let sidebarCollapsed = false;
+let storageFlushedForQuit = false;
 
 function emit(channel, payload) {
   if (!shellView?.webContents.isDestroyed()) shellView.webContents.send(channel, payload);
@@ -200,7 +203,7 @@ function createWindow() {
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
-      partition: 'persist:pokesurvivor-desktop',
+      partition: GAME_PARTITION,
       autoplayPolicy: 'no-user-gesture-required'
     }
   });
@@ -239,7 +242,10 @@ function createWindow() {
 
 app.whenReady().then(() => {
   store = new ScriptStore(app.getPath('userData'));
-  const gameSession = session.fromPartition('persist:pokesurvivor-desktop');
+  gameSession = session.fromPartition(GAME_PARTITION);
+  if (!gameSession.isPersistent()) {
+    throw new Error('The PokéSurvivor game session must use persistent storage.');
+  }
   gameSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   registerIpc();
   createWindow();
@@ -248,6 +254,18 @@ app.whenReady().then(() => {
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
+});
+
+app.on('before-quit', (event) => {
+  if (storageFlushedForQuit || !gameSession) return;
+  event.preventDefault();
+  gameSession.flushStorageData();
+  gameSession.cookies.flushStore()
+    .catch((error) => console.error('Could not flush the game cookie store:', error))
+    .finally(() => {
+      storageFlushedForQuit = true;
+      app.quit();
+    });
 });
 
 app.on('web-contents-created', (_event, contents) => {
