@@ -56,8 +56,16 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 
 .scripts-section { min-height: 0; display: flex; flex-direction: column; flex: 1 1 auto; }
 .section-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.section-heading-actions { display: flex; align-items: center; gap: 6px; }
 .primary-button { background: var(--amber); color: #17120a; border-radius: 7px; padding: 8px 11px; font-size: 11px; font-weight: 850; box-shadow: 0 4px 14px #0005; }
 .primary-button:hover { background: #ffd05e; }
+.collapse-button { width: 30px; height: 30px; border-radius: 7px; color: #aebbc1; background: var(--surface); border: 1px solid var(--line); font-size: 15px; font-weight: 800; transition: transform .15s, background .15s; }
+.collapse-button:hover { background: var(--surface-2); }
+.scripts-body { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+.scripts-section.collapsed { flex: 0 0 auto; }
+.scripts-section.collapsed .section-heading { margin-bottom: 0; }
+.scripts-section.collapsed .scripts-body { display: none; }
+.scripts-section.collapsed .collapse-button { transform: rotate(180deg); }
 .warning { color: #b9aa8c; background: #2a2315; border: 1px solid #5a4825; border-radius: 8px; font-size: 10px; line-height: 1.45; padding: 9px 10px; margin-bottom: 10px; }
 .script-list { overflow: auto; display: flex; flex-direction: column; gap: 7px; padding-right: 2px; }
 .script-item { background: var(--surface); border: 1px solid var(--line); border-radius: 9px; padding: 10px; }
@@ -77,7 +85,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .empty-state p { color: #d9dfe1; font-size: 12px; font-weight: 750; }
 .empty-state span { display: block; margin-top: 4px; font-size: 10px; }
 
-.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin: 12px 0; }
+.actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 12px; }
 .actions button { padding: 8px 6px; border-radius: 7px; font-size: 10px; font-weight: 750; }
 .danger-button { color: #ffaaaa; background: #331d20; border: 1px solid #603035; }
 .danger-button:hover { background: #422328; }

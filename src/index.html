@@ -38,22 +38,27 @@
             <p class="eyebrow">LOCAL ONLY</p>
             <h2>Script loader</h2>
           </div>
-          <button id="import" class="primary-button">+ Import</button>
+          <div class="section-heading-actions">
+            <button id="import" class="primary-button">+ Import</button>
+            <button id="toggle-scripts" class="collapse-button" aria-expanded="true" aria-controls="scripts-body" title="Collapse script loader">⌃</button>
+          </div>
         </div>
 
-        <p class="warning">Scripts run with access to the game page and your signed-in session. Only import code you have reviewed and trust.</p>
+        <div id="scripts-body" class="scripts-body">
+          <p class="warning">Scripts run with access to the game page and your signed-in session. Only import code you have reviewed and trust.</p>
 
-        <div id="script-list" class="script-list" aria-live="polite"></div>
-        <div id="empty-state" class="empty-state">
-          <div class="empty-icon">JS</div>
-          <p>No scripts imported</p>
-          <span>Add a local .js file to get started.</span>
+          <div id="script-list" class="script-list" aria-live="polite"></div>
+          <div id="empty-state" class="empty-state">
+            <div class="empty-icon">JS</div>
+            <p>No scripts imported</p>
+            <span>Add a local .js file to get started.</span>
+          </div>
+
+          <section class="actions">
+            <button id="stop-all" class="danger-button">■ Stop all scripts</button>
+            <button id="folder" class="secondary-button">Open scripts folder</button>
+          </section>
         </div>
-      </section>
-
-      <section class="actions">
-        <button id="stop-all" class="danger-button">■ Stop all scripts</button>
-        <button id="folder" class="secondary-button">Open scripts folder</button>
       </section>
 
       <section class="activity-section">

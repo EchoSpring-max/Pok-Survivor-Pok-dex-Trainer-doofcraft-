@@ -3,8 +3,12 @@ const elements = {
   empty: document.querySelector('#empty-state'),
   log: document.querySelector('#log'),
   statusText: document.querySelector('#status-text'),
-  statusDot: document.querySelector('#status-dot')
+  statusDot: document.querySelector('#status-dot'),
+  scriptsSection: document.querySelector('.scripts-section'),
+  scriptsToggle: document.querySelector('#toggle-scripts')
 };
+
+const SCRIPT_SECTION_STORAGE_KEY = 'pokesurvivor-desktop:scripts-collapsed';
 
 function formatSize(bytes) {
   return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1)} KB`;
@@ -82,6 +86,13 @@ function renderGameStatus(status) {
     : status.state === 'loading' ? 'Loading game…' : status.message || 'Connection error';
 }
 
+function setScriptsCollapsed(collapsed) {
+  elements.scriptsSection.classList.toggle('collapsed', collapsed);
+  elements.scriptsToggle.setAttribute('aria-expanded', String(!collapsed));
+  elements.scriptsToggle.title = collapsed ? 'Expand script loader' : 'Collapse script loader';
+  localStorage.setItem(SCRIPT_SECTION_STORAGE_KEY, String(collapsed));
+}
+
 document.querySelector('#import').addEventListener('click', () => withError(async () => {
   const result = await window.desktop.importScript();
   if (!result.canceled) addLog('Script imported. Review it before enabling autorun.', 'success');
@@ -92,12 +103,16 @@ document.querySelector('#devtools').addEventListener('click', () => window.deskt
 document.querySelector('#stop-all').addEventListener('click', () => withError(() => window.desktop.stopAll()));
 document.querySelector('#folder').addEventListener('click', () => window.desktop.openScriptsFolder());
 document.querySelector('#clear-log').addEventListener('click', () => elements.log.replaceChildren());
+elements.scriptsToggle.addEventListener('click', () => {
+  setScriptsCollapsed(!elements.scriptsSection.classList.contains('collapsed'));
+});
 
 window.desktop.onScriptsChanged(renderScripts);
 window.desktop.onScriptEvent((entry) => addLog(entry.message, entry.level));
 window.desktop.onGameStatus(renderGameStatus);
 
 withError(async () => {
+  setScriptsCollapsed(localStorage.getItem(SCRIPT_SECTION_STORAGE_KEY) === 'true');
   const [scripts, gameStatus] = await Promise.all([
     window.desktop.listScripts(),
     window.desktop.getGameStatus()
