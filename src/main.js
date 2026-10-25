@@ -129,7 +129,11 @@ async function stopAllScripts() {
     registry.clear();
   })()`;
   await gameView.webContents.executeJavaScript(source, true);
-  emit('script-event', { level: 'info', message: 'Stopped all scripts.' });
+  for (const script of store.list()) {
+    if (script.enabled) store.setEnabled(script.id, false);
+  }
+  emit('scripts-changed', store.list());
+  emit('script-event', { level: 'info', message: 'Stopped all scripts and disabled autorun.' });
 }
 
 async function runEnabledScripts() {
@@ -175,10 +179,16 @@ function registerIpc() {
     emit('scripts-changed', store.list());
     return { canceled: false, id };
   });
-  ipcMain.handle('scripts:run', (_event, id) => runScript(id));
+  ipcMain.handle('scripts:run', async (_event, id) => {
+    store.setEnabled(id, true);
+    emit('scripts-changed', store.list());
+    return runScript(id, 'remembered');
+  });
   ipcMain.handle('scripts:stop', async (_event, id) => {
     await stopScript(id);
-    emit('script-event', { level: 'info', message: 'Script cleanup requested.' });
+    store.setEnabled(id, false);
+    emit('scripts-changed', store.list());
+    emit('script-event', { level: 'info', message: 'Script stopped and autorun disabled.' });
     return { ok: true };
   });
   ipcMain.handle('scripts:toggle', async (_event, id, enabled) => {

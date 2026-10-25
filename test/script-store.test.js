@@ -21,6 +21,9 @@ test('imports, enables, reads, and removes scripts', () => {
   assert.equal(store.read(id).contents.includes('return'), true);
   store.setEnabled(id, true);
   assert.equal(store.list()[0].enabled, true);
+  const reopenedStore = new ScriptStore(path.join(root, 'data'));
+  assert.equal(reopenedStore.list()[0].enabled, true);
+  assert.equal(reopenedStore.read(id).contents.includes('return'), true);
   store.remove(id);
   assert.deepEqual(store.list(), []);
   fs.rmSync(root, { recursive: true, force: true });
