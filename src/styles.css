@@ -30,9 +30,7 @@ main {
 }
 
 .brand { display: flex; gap: 13px; align-items: center; margin-bottom: 18px; }
-.brand-mark { width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(#f35d40 0 47%, #e8e2d3 47% 100%); border: 3px solid #070a0c; box-shadow: 0 0 0 1px #50616a, 0 7px 20px #0008; position: relative; flex: 0 0 auto; }
-.brand-mark::before { content: ""; position: absolute; top: 19px; left: 0; right: 0; height: 4px; background: #070a0c; }
-.brand-mark span { position: absolute; width: 13px; height: 13px; border-radius: 50%; background: #f7f1e2; border: 3px solid #070a0c; left: 14px; top: 14px; z-index: 1; }
+.brand-mark { width: 48px; height: 48px; object-fit: contain; image-rendering: pixelated; filter: drop-shadow(0 7px 10px #0008); flex: 0 0 auto; }
 h1, h2, p { margin: 0; }
 h1 { font-size: 20px; letter-spacing: -.02em; line-height: 1.1; }
 h2 { font-size: 16px; }
