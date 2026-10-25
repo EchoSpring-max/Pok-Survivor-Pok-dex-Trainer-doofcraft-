@@ -61,6 +61,28 @@
         </div>
       </section>
 
+      <section class="rpc-section">
+        <div class="rpc-heading">
+          <div>
+            <p class="eyebrow">DISCORD</p>
+            <h2>Rich Presence</h2>
+          </div>
+          <label class="rpc-switch" title="Enable Discord Rich Presence">
+            <input id="rpc-enabled" type="checkbox" />
+            <span></span>
+          </label>
+        </div>
+        <div class="rpc-status-row">
+          <span id="rpc-dot" class="rpc-dot disabled"></span>
+          <span id="rpc-status">Not configured</span>
+        </div>
+        <div class="rpc-form">
+          <input id="rpc-client-id" inputmode="numeric" autocomplete="off" placeholder="Discord Application ID" aria-label="Discord Application ID" />
+          <button id="rpc-save">Save</button>
+        </div>
+        <button id="rpc-portal" class="rpc-help">Create an app or find your ID ↗</button>
+      </section>
+
       <section class="activity-section">
         <div class="activity-heading">
           <h2>Activity</h2>

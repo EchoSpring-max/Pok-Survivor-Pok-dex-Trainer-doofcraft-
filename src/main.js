@@ -9,6 +9,7 @@ const {
   session
 } = require('electron');
 const { ScriptStore } = require('./script-store');
+const { DiscordPresence } = require('./discord-presence');
 
 const GAME_URL = 'https://pokesurvivor.doofcraft.com/';
 const GAME_ORIGIN = new URL(GAME_URL).origin;
@@ -22,6 +23,7 @@ let window;
 let shellView;
 let gameView;
 let gameSession;
+let discordPresence;
 let store;
 let currentGameStatus = { state: 'loading' };
 let sidebarCollapsed = false;
@@ -176,6 +178,9 @@ function registerIpc() {
     layout();
     return { collapsed: sidebarCollapsed };
   });
+  ipcMain.handle('rpc:get-state', () => discordPresence.publicState());
+  ipcMain.handle('rpc:configure', (_event, settings) => discordPresence.configure(settings));
+  ipcMain.handle('rpc:open-developer-portal', () => shell.openExternal('https://discord.com/developers/applications'));
 }
 
 function createWindow() {
@@ -222,11 +227,14 @@ function createWindow() {
   gameView.webContents.on('did-start-loading', () => setGameStatus({ state: 'loading' }));
   gameView.webContents.on('did-finish-load', async () => {
     setGameStatus({ state: 'ready', url: gameView.webContents.getURL() });
+    discordPresence.setPage(gameView.webContents.getURL());
     await runEnabledScripts();
   });
   gameView.webContents.on('did-stop-loading', () => {
     setGameStatus({ state: 'ready', url: gameView.webContents.getURL() });
+    discordPresence.setPage(gameView.webContents.getURL());
   });
+  gameView.webContents.on('did-navigate-in-page', (_event, url) => discordPresence.setPage(url));
   gameView.webContents.on('did-fail-load', (_event, code, description, validatedUrl, isMainFrame) => {
     if (isMainFrame) setGameStatus({ state: 'error', message: `${description} (${code})`, url: validatedUrl });
   });
@@ -242,6 +250,7 @@ function createWindow() {
 
 app.whenReady().then(() => {
   store = new ScriptStore(app.getPath('userData'));
+  discordPresence = new DiscordPresence(path.join(app.getPath('userData'), 'discord-rpc.json'), (state) => emit('rpc-state', state));
   gameSession = session.fromPartition(GAME_PARTITION);
   if (!gameSession.isPersistent()) {
     throw new Error('The PokéSurvivor game session must use persistent storage.');
@@ -249,6 +258,7 @@ app.whenReady().then(() => {
   gameSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
   registerIpc();
   createWindow();
+  discordPresence.start();
   app.on('activate', () => { if (!window) createWindow(); });
 });
 
@@ -260,8 +270,10 @@ app.on('before-quit', (event) => {
   if (storageFlushedForQuit || !gameSession) return;
   event.preventDefault();
   gameSession.flushStorageData();
-  gameSession.cookies.flushStore()
-    .catch((error) => console.error('Could not flush the game cookie store:', error))
+  Promise.all([
+    gameSession.cookies.flushStore().catch((error) => console.error('Could not flush the game cookie store:', error)),
+    discordPresence?.stop()
+  ])
     .finally(() => {
       storageFlushedForQuit = true;
       app.quit();

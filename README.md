@@ -9,6 +9,11 @@ An unofficial Windows desktop client for [PokéSurvivor](https://pokesurvivor.do
 - Manual run/stop, opt-in autorun after navigation, reload/home controls, detached developer console, and an emergency stop-all action.
 - Per-script cleanup: return a function from a script and the client calls it when the script is stopped, disabled, rerun, or removed.
 - Persistent game login, cookies, site storage, and script preferences across client restarts and upgrades.
+- Optional Discord Rich Presence with reconnect handling, current screen status, elapsed play time, and a play button.
+
+## Discord Rich Presence
+
+Rich Presence requires a Discord Application ID. Create an application in the [Discord Developer Portal](https://discord.com/developers/applications), copy its Application ID from **General Information**, and paste it into the client. The ID is public metadata, not a bot token or secret. Keep the Discord desktop app running; the client reconnects automatically when Discord restarts.
 
 ## Development
 
