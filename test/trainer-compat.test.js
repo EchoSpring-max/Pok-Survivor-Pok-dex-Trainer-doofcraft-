@@ -12,14 +12,17 @@ function runTrainer(workerSource, settings = {}) {
     ['ps-damage-multiplier', settings.damage ?? '7'],
     ['ps-speed-multiplier', settings.speed ?? '2'],
     ['ps-candy-multiplier', settings.candy ?? '3'],
-    ['ps-trainer-god', settings.god ?? 'true']
+    ['ps-trainer-god', settings.god ?? 'true'],
+    ['ps-afk-rifts', settings.rifts ?? 'false']
   ]);
 
   class FakeWorker {
     constructor(url, options) {
       this.url = url;
       this.options = options;
+      this.messages = [];
     }
+    postMessage(message) { this.messages.push(message); }
   }
   class FakeXhr {
     open() {}
@@ -88,4 +91,15 @@ test('candy patch still applies when unrelated signatures are unavailable', () =
 
   assert.equal(worker.url, 'blob:patched-worker');
   assert.match(patchedSource, /candyCorn=\(n\.stats\.candyCorn\?\?0\)\+\(t\.value\*3\)/);
+});
+
+test('AFK rifts are gated by the trainer control message and solo play', () => {
+  const riftSource = 'o(n).find(e=>!e.dead&&H(e.x,e.y,c.x,c.y-10)<900)&&zm(e)';
+  const { patchedSource, worker } = runTrainer(riftSource, { rifts: 'true' });
+
+  assert.equal(worker.url, 'blob:patched-worker');
+  assert.equal(JSON.stringify(worker.messages), JSON.stringify([{__psTrainerControl:{afk:false}}]));
+  assert.match(patchedSource, /__psTrainerControl/);
+  assert.match(patchedSource, /__psTrainerAfk&&o\(n\)\.length===1/);
+  assert.match(patchedSource, /o\(n\)\.some\(e=>!e\.dead/);
 });

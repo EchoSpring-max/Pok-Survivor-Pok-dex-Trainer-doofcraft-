@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PokéSurvivor • Pokédex Trainer
 // @namespace    https://github.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-
-// @version      1.8.6
+// @version      1.9.0
 // @description  Unofficial Pokédex-style trainer featuring gameplay controls, AFK tools and customizable auto-upgrades.
 // @author       EchoSpring-max
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACP0lEQVR42u2bPU4DMRCFdy0XkVIBUiQQcABaThBRcwg67kDNHeg4RGrECWg5ACCQIgEVEh1UiSzHsT32G//FU0FY7Pme39gTyTsMPXrsdIwh/3R9cPxXIszd59vIJkCp0LFiiBbhKTmPIQNdzWZFQt8vl2QnjBT4UsFdQthEEK3Bm3K1lYNoDZ4qgmgRniKCpAyAiKP9Pecz71/fUBFMm6OXACmhtz2PFMN5CqgWQaw+FZzTFaoL1FNBlrDilDHRjhA1wHOOL2sB53KDqA0ePa+oFR41vxh2PETNq4/IQ9QOH5tPL4EWVj8mr513gMy1+uevHxufPZ0cQlxAaZBkasVN4PrfEEIUWQI2+JDnkgsQY38qVIwIlDxlqqRMcfvwuP755mIOnW8xnZR9Cqjwpt+b3ANcsDlE6J1gFyBDmDY82+dNOkCHzQEf1Qm+PNM2rNOzOXnFEXNAHaCerdTJqDAx8L49QPIS8IWiwmcpgVgRTA5KCR4swGI6GS5/ftcQoUkjYUPt3/uAUAFiNkN0xKw+zAG5REDMGyxAiNqcEZqPQE2a2gWx1mfZBFOJgJxHIqy3OhbV5DjOdBN4bCkKrvpDu4EDHtoJrpJBu4ELnK0V1ktCh/ARw+Ye9OmzcYcWeVNMFyLHMTcM22+IsX8ZMpVFaf2GdCmHuC+oQviIgYS23RI1loBeBohSyBU+1+aNx6D+oEvFWuGtfUDNIlBemOivzPgMXONLUz7w3q1wyPt4NcB7O6AWR9S4UD16ZI5/0YX0gyZhTxcAAAAASUVORK5CYII=
@@ -21,15 +21,22 @@
   let speed = Number(localStorage.getItem('ps-speed-multiplier') || '1');
   if (!Number.isFinite(speed) || speed < 1 || speed > 20) speed = 1;
   const candySignature = 'case`candy-corn`:t.sharedCandyCorn===!1?n.stats.candyCorn=(n.stats.candyCorn??0)+t.value:r.team.candyCorn=(r.team.candyCorn??0)+t.value;return;';
+  const riftSignature = 'o(n).find(e=>!e.dead&&H(e.x,e.y,c.x,c.y-10)<900)&&zm(e)';
   let candy = Number(localStorage.getItem('ps-candy-multiplier') || '1');
   if (!Number.isInteger(candy) || candy < 1 || candy > 100) candy = 1;
+  const autoRifts = localStorage.getItem('ps-afk-rifts') === 'true';
   const godSignature = /(function [A-Za-z_$][\w$]*\(e,t,n,r,a\)\{if\()t\.hp-=n,/;
   let god = localStorage.getItem('ps-trainer-god') !== 'false';
   let status = 'Waiting for battle worker';
   const desktopClient = globalThis.__pokesurvivorDesktopScripts instanceof Map;
+  let afkRunning = false;
+  let activeWorker = null;
   let multiplier = Number(localStorage.getItem('ps-damage-multiplier') || '5');
   if (!Number.isFinite(multiplier) || multiplier < 1 || multiplier > 1000) multiplier = 5;
   function update() { const el = document.getElementById('ps-damage-status'); if (el) el.textContent = status; }
+  function syncAfkWorker() {
+    if (autoRifts && activeWorker) activeWorker.postMessage({__psTrainerControl:{afk:afkRunning}});
+  }
   window.Worker = new Proxy(NativeWorker, {
     construct(Target, args) {
       let url;
@@ -66,12 +73,21 @@
             applied.push('god mode');
           } else missing.push('god mode');
         }
+        if (autoRifts) {
+          if (source.includes(riftSignature)) {
+            source = source.replace(riftSignature, '(globalThis.__psTrainerAfk&&o(n).length===1||o(n).some(e=>!e.dead&&H(e.x,e.y,c.x,c.y-10)<900))&&zm(e)');
+            source = 'self.addEventListener("message",e=>{if(e.data?.__psTrainerControl){globalThis.__psTrainerAfk=e.data.__psTrainerControl.afk===true;e.stopImmediatePropagation()}},true);\n' + source;
+            applied.push('AFK rifts');
+          } else missing.push('AFK rifts');
+        }
         if (!applied.length) {
           status = `Worker found; no compatible patches (${missing.join(', ')})`; update();
           return Reflect.construct(Target, args);
         }
         const blobUrl = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
         const worker = Reflect.construct(Target, [blobUrl, args[1]]);
+        activeWorker = worker;
+        syncAfkWorker();
         setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
         status = `Injected: ${applied.join(', ')}${missing.length ? ` · unavailable: ${missing.join(', ')}` : ''}`; update();
         return worker;
@@ -217,6 +233,8 @@
     modeSelect.value=localStorage.getItem('ps-afk-mode')||'waves';modeSelect.onchange=()=>localStorage.setItem('ps-afk-mode',modeSelect.value);
     modeLabel.append(modeSelect);
     const restart=addCheck('Auto-start / restart runs','ps-afk-restart',true);
+    const rifts=addCheck('Auto-enter rifts (solo; press Run after changing)','ps-afk-rifts',false);
+    const bonding=addCheck('Auto-complete move bonding','ps-afk-bonding',true);
     const upgrades=addCheck('Auto-select upgrades','ps-afk-upgrades',true);
     addText('Upgrade strategy:');
     const strategy=document.createElement('select');
@@ -251,7 +269,14 @@
       const text=document.body.innerText||'';
       const end=/you fell|back to menu|run complete|victory/i.test(text);
       if(end&&restart.checked){if(doClick(findButton(/back to menu|return to menu|continue/i)))runs++;}
-      else if(upgrades.checked && document.querySelectorAll('button.ps-card[data-testid^="option-"]').length){
+      else if(bonding.checked && document.querySelector('h2.bond-title') && document.querySelectorAll('button.ps-card[data-testid^="option-"]').length){
+        const cards=[...document.querySelectorAll('button.ps-card[data-testid^="option-"]')].filter(el=>el.getClientRects().length&&!el.disabled);
+        const key='bond|'+cards.map(c=>c.textContent.trim()).join('|');
+        if(key!==choiceKey){choiceKey=key;choiceSince=Date.now();}
+        if(cards.length && Date.now()-choiceSince>=Number(delay.value) && doClick(cards[0])){
+          choiceSince=Date.now();choiceKey='';
+        }
+      } else if(upgrades.checked && document.querySelectorAll('button.ps-card[data-testid^="option-"]').length){
         const cards=[...document.querySelectorAll('button.ps-card[data-testid^="option-"]')].filter(el=>el.getClientRects().length&&!el.disabled);
         const heading=cards[0]?.parentElement?.parentElement?.querySelector('h2')?.textContent||'';
         const key=heading+'|'+cards.map(c=>c.textContent.trim()).join('|');
@@ -307,9 +332,9 @@
       }else release();
       afkStatus.textContent='Running · completed/restarted: '+runs+' · '+(movement.checked?'movement experimental':'movement off');
     };
-    startBtn.onclick=()=>{if(timer)return;localStorage.setItem('ps-afk-mon',monInput.value.trim());timer=setInterval(tick,1200);afkStatus.textContent='Running. Keep this tab open.';};
-    stopBtn.onclick=()=>{if(timer)clearInterval(timer);timer=null;release();afkStatus.textContent='Stopped · completed/restarted: '+runs;};
-    window.addEventListener('pagehide',()=>{if(timer)clearInterval(timer);release();});
+    startBtn.onclick=()=>{if(timer)return;afkRunning=true;syncAfkWorker();localStorage.setItem('ps-afk-mon',monInput.value.trim());timer=setInterval(tick,1200);afkStatus.textContent='Running. Keep this tab open.';};
+    stopBtn.onclick=()=>{if(timer)clearInterval(timer);timer=null;afkRunning=false;syncAfkWorker();release();afkStatus.textContent='Stopped · completed/restarted: '+runs;};
+    window.addEventListener('pagehide',()=>{if(timer)clearInterval(timer);afkRunning=false;syncAfkWorker();release();});
     // Scoped theme: never changes game controls outside the trainer.
     const theme = document.createElement('style');
     theme.textContent = `
@@ -382,7 +407,7 @@
       #ps-damage-panel.ps-pokedex label {color:#f5f6ec !important;line-height:1.8}
       #ps-damage-panel.ps-pokedex #ps-damage-status {background:#b9ddcc;color:#204940 !important;border-radius:6px;padding:8px;max-width:none !important;word-break:break-word}
       #ps-damage-panel.ps-pokedex > div:nth-of-type(2)::after {
-        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.8';display:block;
+        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.9';display:block;
         color:#83d9b3;font-size:9px;letter-spacing:1px;margin-top:12px;text-align:center;
       }
     `;
