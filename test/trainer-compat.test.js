@@ -73,24 +73,24 @@ function runTrainer(workerSource, settings = {}) {
 test('trainer patches the current minified worker signatures', () => {
   const workerSource = [
     'jy=(e,t)=>t.baseAttack*t.attackMul*Ay(t,`attack`)',
-    '({baseSpeed:a.speed,baseAttack:a.attack})',
+    'Fy=e=>e.speedMul*Ay(e,`speed`)',
     candySignature,
     'function Yy(e,t,n,r,a){if(t.hp-=n,aS(e,t,n,a))return}'
   ].join(';');
   const { patchedSource, worker } = runTrainer(workerSource);
 
   assert.equal(worker.url, 'blob:patched-worker');
-  assert.match(patchedSource, /baseAttack\*t\.attackMul\*7\*/);
-  assert.match(patchedSource, /baseSpeed:a\.speed\*2,baseAttack:a\.attack/);
-  assert.match(patchedSource, /candyCorn=\(n\.stats\.candyCorn\?\?0\)\+\(t\.value\*3\)/);
-  assert.match(patchedSource, /function Yy\(e,t,n,r,a\)\{if\(n=0,t\.hp-=n,/);
+  assert.match(patchedSource, /baseAttack\*t\.attackMul\*\(globalThis\.__psTrainerConfig\?\.damage\?\?1\)\*/);
+  assert.match(patchedSource, /speedMul\*Ay\(e,`speed`\)\*\(globalThis\.__psTrainerConfig\?\.speed\?\?1\)/);
+  assert.match(patchedSource, /t\.value\*\(globalThis\.__psTrainerConfig\?\.candy\?\?1\)/);
+  assert.match(patchedSource, /function Yy\(e,t,n,r,a\)\{if\(globalThis\.__psTrainerConfig\?\.god&&\(n=0\),t\.hp-=n,/);
 });
 
 test('candy patch still applies when unrelated signatures are unavailable', () => {
   const { patchedSource, worker } = runTrainer(candySignature);
 
   assert.equal(worker.url, 'blob:patched-worker');
-  assert.match(patchedSource, /candyCorn=\(n\.stats\.candyCorn\?\?0\)\+\(t\.value\*3\)/);
+  assert.match(patchedSource, /t\.value\*\(globalThis\.__psTrainerConfig\?\.candy\?\?1\)/);
 });
 
 test('AFK rifts are gated by the trainer control message and solo play', () => {
@@ -98,8 +98,15 @@ test('AFK rifts are gated by the trainer control message and solo play', () => {
   const { patchedSource, worker } = runTrainer(riftSource, { rifts: 'true' });
 
   assert.equal(worker.url, 'blob:patched-worker');
-  assert.equal(JSON.stringify(worker.messages), JSON.stringify([{__psTrainerControl:{afk:false}}]));
+  assert.equal(JSON.stringify(worker.messages), JSON.stringify([{__psTrainerControl:{
+    damage:7,
+    speed:2,
+    candy:3,
+    god:true,
+    autoRifts:true,
+    afk:false
+  }}]));
   assert.match(patchedSource, /__psTrainerControl/);
-  assert.match(patchedSource, /__psTrainerAfk&&o\(n\)\.length===1/);
+  assert.match(patchedSource, /__psTrainerConfig\?\.autoRifts&&globalThis\.__psTrainerConfig\?\.afk&&o\(n\)\.length===1/);
   assert.match(patchedSource, /o\(n\)\.some\(e=>!e\.dead/);
 });

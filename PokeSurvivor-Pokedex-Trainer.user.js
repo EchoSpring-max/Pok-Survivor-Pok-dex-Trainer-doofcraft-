@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PokéSurvivor • Pokédex Trainer
 // @namespace    https://github.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-
-// @version      1.9.0
+// @version      1.10.0
 // @description  Unofficial Pokédex-style trainer featuring gameplay controls, AFK tools and customizable auto-upgrades.
 // @author       EchoSpring-max
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACP0lEQVR42u2bPU4DMRCFdy0XkVIBUiQQcABaThBRcwg67kDNHeg4RGrECWg5ACCQIgEVEh1UiSzHsT32G//FU0FY7Pme39gTyTsMPXrsdIwh/3R9cPxXIszd59vIJkCp0LFiiBbhKTmPIQNdzWZFQt8vl2QnjBT4UsFdQthEEK3Bm3K1lYNoDZ4qgmgRniKCpAyAiKP9Pecz71/fUBFMm6OXACmhtz2PFMN5CqgWQaw+FZzTFaoL1FNBlrDilDHRjhA1wHOOL2sB53KDqA0ePa+oFR41vxh2PETNq4/IQ9QOH5tPL4EWVj8mr513gMy1+uevHxufPZ0cQlxAaZBkasVN4PrfEEIUWQI2+JDnkgsQY38qVIwIlDxlqqRMcfvwuP755mIOnW8xnZR9Cqjwpt+b3ANcsDlE6J1gFyBDmDY82+dNOkCHzQEf1Qm+PNM2rNOzOXnFEXNAHaCerdTJqDAx8L49QPIS8IWiwmcpgVgRTA5KCR4swGI6GS5/ftcQoUkjYUPt3/uAUAFiNkN0xKw+zAG5REDMGyxAiNqcEZqPQE2a2gWx1mfZBFOJgJxHIqy3OhbV5DjOdBN4bCkKrvpDu4EDHtoJrpJBu4ELnK0V1ktCh/ARw+Ye9OmzcYcWeVNMFyLHMTcM22+IsX8ZMpVFaf2GdCmHuC+oQviIgYS23RI1loBeBohSyBU+1+aNx6D+oEvFWuGtfUDNIlBemOivzPgMXONLUz7w3q1wyPt4NcB7O6AWR9S4UD16ZI5/0YX0gyZhTxcAAAAASUVORK5CYII=
@@ -17,25 +17,33 @@
   'use strict';
   const NativeWorker = window.Worker;
   const damageSignature = /([A-Za-z_$][\w$]*=\(e,t\)=>t\.baseAttack\*t\.attackMul)\*/;
-  const speedSignature = 'baseSpeed:a.speed,baseAttack:a.attack';
+  const speedSignature = /([A-Za-z_$][\w$]*=e=>e\.speedMul\*[A-Za-z_$][\w$]*\(e,`speed`\))/;
   let speed = Number(localStorage.getItem('ps-speed-multiplier') || '1');
   if (!Number.isFinite(speed) || speed < 1 || speed > 20) speed = 1;
   const candySignature = 'case`candy-corn`:t.sharedCandyCorn===!1?n.stats.candyCorn=(n.stats.candyCorn??0)+t.value:r.team.candyCorn=(r.team.candyCorn??0)+t.value;return;';
   const riftSignature = 'o(n).find(e=>!e.dead&&H(e.x,e.y,c.x,c.y-10)<900)&&zm(e)';
   let candy = Number(localStorage.getItem('ps-candy-multiplier') || '1');
   if (!Number.isInteger(candy) || candy < 1 || candy > 100) candy = 1;
-  const autoRifts = localStorage.getItem('ps-afk-rifts') === 'true';
+  let autoRifts = localStorage.getItem('ps-afk-rifts') === 'true';
   const godSignature = /(function [A-Za-z_$][\w$]*\(e,t,n,r,a\)\{if\()t\.hp-=n,/;
   let god = localStorage.getItem('ps-trainer-god') !== 'false';
   let status = 'Waiting for battle worker';
-  const desktopClient = globalThis.__pokesurvivorDesktopScripts instanceof Map;
   let afkRunning = false;
   let activeWorker = null;
   let multiplier = Number(localStorage.getItem('ps-damage-multiplier') || '5');
   if (!Number.isFinite(multiplier) || multiplier < 1 || multiplier > 1000) multiplier = 5;
   function update() { const el = document.getElementById('ps-damage-status'); if (el) el.textContent = status; }
   function syncAfkWorker() {
-    if (autoRifts && activeWorker) activeWorker.postMessage({__psTrainerControl:{afk:afkRunning}});
+    if (!activeWorker) return false;
+    activeWorker.postMessage({__psTrainerControl:{
+      damage: multiplier,
+      speed,
+      candy,
+      god,
+      autoRifts,
+      afk: afkRunning
+    }});
+    return true;
   }
   window.Worker = new Proxy(NativeWorker, {
     construct(Target, args) {
@@ -54,36 +62,30 @@
         const missing = [];
         let source = xhr.responseText;
         if (damageSignature.test(source)) {
-          source = source.replace(damageSignature, `$1*${multiplier}*`);
-          applied.push(`damage ×${multiplier}`);
+          source = source.replace(damageSignature, '$1*(globalThis.__psTrainerConfig?.damage??1)*');
+          applied.push('dynamic damage');
         } else missing.push('damage');
-        if (source.includes(speedSignature)) {
-          source = source.replace(speedSignature, `baseSpeed:a.speed*${speed},baseAttack:a.attack`);
-          applied.push(`speed ×${speed}`);
+        if (speedSignature.test(source)) {
+          source = source.replace(speedSignature, '$1*(globalThis.__psTrainerConfig?.speed??1)');
+          applied.push('dynamic speed');
         } else missing.push('speed');
-        if (candy !== 1) {
-          if (source.includes(candySignature)) {
-            source = source.replace(candySignature, candySignature.replaceAll('t.value', `(t.value*${candy})`));
-            applied.push(`candy pickups ×${candy}`);
-          } else missing.push('candy');
-        }
-        if (god) {
-          if (godSignature.test(source)) {
-            source = source.replace(godSignature, '$1n=0,t.hp-=n,');
-            applied.push('god mode');
-          } else missing.push('god mode');
-        }
-        if (autoRifts) {
-          if (source.includes(riftSignature)) {
-            source = source.replace(riftSignature, '(globalThis.__psTrainerAfk&&o(n).length===1||o(n).some(e=>!e.dead&&H(e.x,e.y,c.x,c.y-10)<900))&&zm(e)');
-            source = 'self.addEventListener("message",e=>{if(e.data?.__psTrainerControl){globalThis.__psTrainerAfk=e.data.__psTrainerControl.afk===true;e.stopImmediatePropagation()}},true);\n' + source;
-            applied.push('AFK rifts');
-          } else missing.push('AFK rifts');
-        }
+        if (source.includes(candySignature)) {
+          source = source.replace(candySignature, candySignature.replaceAll('t.value', '(t.value*(globalThis.__psTrainerConfig?.candy??1))'));
+          applied.push('dynamic candy');
+        } else missing.push('candy');
+        if (godSignature.test(source)) {
+          source = source.replace(godSignature, '$1globalThis.__psTrainerConfig?.god&&(n=0),t.hp-=n,');
+          applied.push('dynamic god mode');
+        } else missing.push('god mode');
+        if (source.includes(riftSignature)) {
+          source = source.replace(riftSignature, '(globalThis.__psTrainerConfig?.autoRifts&&globalThis.__psTrainerConfig?.afk&&o(n).length===1||o(n).some(e=>!e.dead&&H(e.x,e.y,c.x,c.y-10)<900))&&zm(e)');
+          applied.push('dynamic AFK rifts');
+        } else missing.push('AFK rifts');
         if (!applied.length) {
           status = `Worker found; no compatible patches (${missing.join(', ')})`; update();
           return Reflect.construct(Target, args);
         }
+        source = 'globalThis.__psTrainerConfig={damage:1,speed:1,candy:1,god:false,autoRifts:false,afk:false};self.addEventListener("message",e=>{if(e.data?.__psTrainerControl){Object.assign(globalThis.__psTrainerConfig,e.data.__psTrainerControl);e.stopImmediatePropagation()}},true);\n' + source;
         const blobUrl = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
         const worker = Reflect.construct(Target, [blobUrl, args[1]]);
         activeWorker = worker;
@@ -162,7 +164,7 @@
     const candyInput = document.createElement('input'); candyInput.type = 'number'; candyInput.min = '1'; candyInput.max = '100'; candyInput.step = '1'; candyInput.value = String(candy); candyInput.style.cssText = 'width:75px;margin-left:6px;padding:4px';
     candyRow.append(candyLabel, candyInput); content.append(candyRow);
     const candyNote = document.createElement('div'); candyNote.textContent = 'Multiplies Candy Corn credited by the local game worker and included in the run result. The server may still validate the final reward.'; candyNote.style.cssText = 'font-size:11px;color:#fbbf24;margin-top:5px;max-width:240px'; content.append(candyNote);
-    const apply = document.createElement('button'); apply.textContent = desktopClient ? 'Save settings' : 'Save & reload'; apply.style.cssText = 'margin-top:10px;padding:6px 12px;cursor:pointer';
+    const apply = document.createElement('button'); apply.textContent = 'Apply settings'; apply.style.cssText = 'margin-top:10px;padding:6px 12px;cursor:pointer';
     apply.onclick = () => {
       const n = Number(input.value);
       if (!Number.isInteger(n) || n < 1 || n > 1000) {status='Choose a whole number from 1 to 1000';update();return;}
@@ -174,10 +176,11 @@
       localStorage.setItem('ps-speed-multiplier', String(sp));
       localStorage.setItem('ps-damage-multiplier', String(n));
       localStorage.setItem('ps-trainer-god', String(godBox.checked));
-      if (desktopClient) {
-        status = 'Settings saved. Press Run in the client once to apply them.';
-        update();
-      } else location.reload();
+      multiplier=n;speed=sp;candy=ca;god=godBox.checked;
+      status = syncAfkWorker()
+        ? `Applied live: damage ×${multiplier}, speed ×${speed}, candy ×${candy}, god mode ${god?'on':'off'}`
+        : 'Settings saved. They will apply when the next run starts.';
+      update();
     };
     content.append(apply);
     const note = document.createElement('div'); note.id='ps-damage-status'; note.textContent=status; note.style.cssText='font-size:11px;color:#cbd5e1;margin-top:12px;max-width:240px'; content.append(note);
@@ -233,7 +236,8 @@
     modeSelect.value=localStorage.getItem('ps-afk-mode')||'waves';modeSelect.onchange=()=>localStorage.setItem('ps-afk-mode',modeSelect.value);
     modeLabel.append(modeSelect);
     const restart=addCheck('Auto-start / restart runs','ps-afk-restart',true);
-    const rifts=addCheck('Auto-enter rifts (solo; press Run after changing)','ps-afk-rifts',false);
+    const rifts=addCheck('Auto-enter rifts (solo)','ps-afk-rifts',false);
+    rifts.onchange=()=>{autoRifts=rifts.checked;localStorage.setItem('ps-afk-rifts',String(autoRifts));syncAfkWorker();};
     const bonding=addCheck('Auto-complete move bonding','ps-afk-bonding',true);
     const upgrades=addCheck('Auto-select upgrades','ps-afk-upgrades',true);
     addText('Upgrade strategy:');
@@ -407,7 +411,7 @@
       #ps-damage-panel.ps-pokedex label {color:#f5f6ec !important;line-height:1.8}
       #ps-damage-panel.ps-pokedex #ps-damage-status {background:#b9ddcc;color:#204940 !important;border-radius:6px;padding:8px;max-width:none !important;word-break:break-word}
       #ps-damage-panel.ps-pokedex > div:nth-of-type(2)::after {
-        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.9';display:block;
+        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.10';display:block;
         color:#83d9b3;font-size:9px;letter-spacing:1px;margin-top:12px;text-align:center;
       }
     `;
