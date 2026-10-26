@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PokéSurvivor • Pokédex Trainer
 // @namespace    https://github.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-
-// @version      1.10.1
+// @version      1.10.2
 // @description  Unofficial Pokédex-style trainer featuring gameplay controls, AFK tools and customizable auto-upgrades.
 // @author       EchoSpring-max
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACP0lEQVR42u2bPU4DMRCFdy0XkVIBUiQQcABaThBRcwg67kDNHeg4RGrECWg5ACCQIgEVEh1UiSzHsT32G//FU0FY7Pme39gTyTsMPXrsdIwh/3R9cPxXIszd59vIJkCp0LFiiBbhKTmPIQNdzWZFQt8vl2QnjBT4UsFdQthEEK3Bm3K1lYNoDZ4qgmgRniKCpAyAiKP9Pecz71/fUBFMm6OXACmhtz2PFMN5CqgWQaw+FZzTFaoL1FNBlrDilDHRjhA1wHOOL2sB53KDqA0ePa+oFR41vxh2PETNq4/IQ9QOH5tPL4EWVj8mr513gMy1+uevHxufPZ0cQlxAaZBkasVN4PrfEEIUWQI2+JDnkgsQY38qVIwIlDxlqqRMcfvwuP755mIOnW8xnZR9Cqjwpt+b3ANcsDlE6J1gFyBDmDY82+dNOkCHzQEf1Qm+PNM2rNOzOXnFEXNAHaCerdTJqDAx8L49QPIS8IWiwmcpgVgRTA5KCR4swGI6GS5/ftcQoUkjYUPt3/uAUAFiNkN0xKw+zAG5REDMGyxAiNqcEZqPQE2a2gWx1mfZBFOJgJxHIqy3OhbV5DjOdBN4bCkKrvpDu4EDHtoJrpJBu4ELnK0V1ktCh/ARw+Ye9OmzcYcWeVNMFyLHMTcM22+IsX8ZMpVFaf2GdCmHuC+oQviIgYS23RI1loBeBohSyBU+1+aNx6D+oEvFWuGtfUDNIlBemOivzPgMXONLUz7w3q1wyPt4NcB7O6AWR9S4UD16ZI5/0YX0gyZhTxcAAAAASUVORK5CYII=
@@ -351,7 +351,8 @@
         --pd-red:#e94046; --pd-dark:#172331; --pd-screen:#cce8db; --pd-ink:#153b3a;
         box-sizing:border-box !important; width:340px !important; min-width:300px !important;
         max-width:min(360px,calc(100vw - 16px)) !important;
-        max-height:calc(100vh - 20px) !important; overflow-y:auto !important;
+        max-height:calc(100vh - 20px) !important; overflow:hidden !important;
+        display:flex !important; flex-direction:column !important;
         padding:0 14px 16px !important; color:#f4f7f5 !important;
         border:4px solid #941e2b !important; border-bottom:9px solid #8e1d29 !important;
         border-radius:19px 19px 23px 23px !important;
@@ -363,7 +364,7 @@
       #ps-damage-panel.ps-pokedex *,#ps-damage-panel.ps-pokedex *::before,#ps-damage-panel.ps-pokedex *::after {box-sizing:border-box}
       #ps-damage-panel.ps-pokedex > div:first-of-type {
         min-height:73px; padding:13px 4px 12px 63px !important; margin:0 -3px 12px !important;
-        border-bottom:3px solid #8d2231; position:relative;
+        border-bottom:3px solid #8d2231; position:relative; flex:0 0 auto; z-index:1;
       }
       #ps-damage-panel.ps-pokedex > div:first-of-type::before {
         content:'';position:absolute;left:5px;top:10px;width:43px;height:43px;
@@ -388,6 +389,8 @@
         background:#1b2934 !important;border:5px solid #e6e5db !important;
         border-radius:13px 13px 22px 13px !important;
         padding:12px !important;box-shadow:0 5px 0 #7e1c2c, inset 0 0 0 2px #0b141c;
+        min-height:0;overflow-y:auto;overscroll-behavior:contain;
+        scrollbar-width:thin;scrollbar-color:#771e2d #172331;
       }
       #ps-damage-panel.ps-pokedex > div:nth-of-type(2) > div:first-child {
         margin-top:0 !important;margin-bottom:12px !important;display:flex !important;
@@ -416,7 +419,7 @@
       #ps-damage-panel.ps-pokedex label {color:#f5f6ec !important;line-height:1.8}
       #ps-damage-panel.ps-pokedex #ps-damage-status {background:#b9ddcc;color:#204940 !important;border-radius:6px;padding:8px;max-width:none !important;word-break:break-word}
       #ps-damage-panel.ps-pokedex > div:nth-of-type(2)::after {
-        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.10.1';display:block;
+        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.10.2';display:block;
         color:#83d9b3;font-size:9px;letter-spacing:1px;margin-top:12px;text-align:center;
       }
     `;
