@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PokéSurvivor • Pokédex Trainer
 // @namespace    https://github.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-
-// @version      1.10.0
+// @version      1.10.1
 // @description  Unofficial Pokédex-style trainer featuring gameplay controls, AFK tools and customizable auto-upgrades.
 // @author       EchoSpring-max
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACP0lEQVR42u2bPU4DMRCFdy0XkVIBUiQQcABaThBRcwg67kDNHeg4RGrECWg5ACCQIgEVEh1UiSzHsT32G//FU0FY7Pme39gTyTsMPXrsdIwh/3R9cPxXIszd59vIJkCp0LFiiBbhKTmPIQNdzWZFQt8vl2QnjBT4UsFdQthEEK3Bm3K1lYNoDZ4qgmgRniKCpAyAiKP9Pecz71/fUBFMm6OXACmhtz2PFMN5CqgWQaw+FZzTFaoL1FNBlrDilDHRjhA1wHOOL2sB53KDqA0ePa+oFR41vxh2PETNq4/IQ9QOH5tPL4EWVj8mr513gMy1+uevHxufPZ0cQlxAaZBkasVN4PrfEEIUWQI2+JDnkgsQY38qVIwIlDxlqqRMcfvwuP755mIOnW8xnZR9Cqjwpt+b3ANcsDlE6J1gFyBDmDY82+dNOkCHzQEf1Qm+PNM2rNOzOXnFEXNAHaCerdTJqDAx8L49QPIS8IWiwmcpgVgRTA5KCR4swGI6GS5/ftcQoUkjYUPt3/uAUAFiNkN0xKw+zAG5REDMGyxAiNqcEZqPQE2a2gWx1mfZBFOJgJxHIqy3OhbV5DjOdBN4bCkKrvpDu4EDHtoJrpJBu4ELnK0V1ktCh/ARw+Ye9OmzcYcWeVNMFyLHMTcM22+IsX8ZMpVFaf2GdCmHuC+oQviIgYS23RI1loBeBohSyBU+1+aNx6D+oEvFWuGtfUDNIlBemOivzPgMXONLUz7w3q1wyPt4NcB7O6AWR9S4UD16ZI5/0YX0gyZhTxcAAAAASUVORK5CYII=
@@ -257,17 +257,21 @@
     delay.oninput=()=>{localStorage.setItem('ps-afk-delay',delay.value);delayLabel.textContent='Selection delay: '+(Number(delay.value)/1000).toFixed(2)+' seconds'};
     delayLabel.textContent='Selection delay: '+(Number(delay.value)/1000).toFixed(2)+' seconds';afkContent.append(delay);
     const movement=addCheck('Auto movement (experimental)','ps-afk-movement',false);
+    const movementStepLabel=addText('Movement square step: 300 ms');
+    const movementStep=document.createElement('input');movementStep.type='range';movementStep.min='100';movementStep.max='1200';movementStep.step='50';movementStep.value=localStorage.getItem('ps-afk-movement-step-ms')||'300';
+    movementStep.oninput=()=>{localStorage.setItem('ps-afk-movement-step-ms',movementStep.value);movementStepLabel.textContent='Movement square step: '+movementStep.value+' ms';};
+    movementStepLabel.textContent='Movement square step: '+movementStep.value+' ms';afkContent.append(movementStep);
     addText('Auto-select reads visible upgrade cards. Damage/Speed/Tank scoring is heuristic; custom names override it. Works by clicking visible game controls. Auto movement uses synthetic keyboard events and may not be accepted by the game.');
     const afkStatus=addText('Stopped');
     const afkControls=document.createElement('div');afkControls.style.cssText='display:flex;gap:8px';afkContent.append(afkControls);
     const startBtn=document.createElement('button');startBtn.textContent='Start AFK';startBtn.style.cssText='padding:7px;flex:1';
     const stopBtn=document.createElement('button');stopBtn.textContent='Stop';stopBtn.style.cssText='padding:7px;flex:1';
     afkControls.append(startBtn,stopBtn);
-    let timer=null, step=0, runs=0, lastAction=0, pressed=null, choiceSince=0, choiceKey="";
+    let timer=null, movementReleaseTimer=null, step=0, runs=0, lastAction=0, pressed=null, choiceSince=0, choiceKey="";
     const clickable=()=>[...document.querySelectorAll('button,[role="button"],a')].filter(el=>!panel.contains(el)&&el.getClientRects().length&&!el.disabled);
     const findButton=(pattern)=>clickable().find(el=>pattern.test((el.textContent||'').trim()));
     const doClick=(el)=>{if(!el||Date.now()-lastAction<1800)return false;lastAction=Date.now();el.click();return true;};
-    const release=()=>{if(!pressed)return;for(const type of ['keyup'])window.dispatchEvent(new KeyboardEvent(type,{key:pressed,code:'Key'+pressed.toUpperCase(),bubbles:true}));pressed=null;};
+    const release=()=>{if(movementReleaseTimer){clearTimeout(movementReleaseTimer);movementReleaseTimer=null;}if(!pressed)return;for(const type of ['keyup'])window.dispatchEvent(new KeyboardEvent(type,{key:pressed,code:'Key'+pressed.toUpperCase(),bubbles:true}));pressed=null;};
     const tick=()=>{
       if(!timer)return;
       const text=document.body.innerText||'';
@@ -331,8 +335,9 @@
         else doClick(findButton(/^solo$/i));
       }
       if(movement.checked&&/canvas/i.test([...document.querySelectorAll('canvas')].map(x=>x.tagName).join(' '))){
-        const keys=['w','d','s','a']; const next=keys[Math.floor(step++/3)%4];
-        if(next!==pressed){release();pressed=next;window.dispatchEvent(new KeyboardEvent('keydown',{key:next,code:'Key'+next.toUpperCase(),bubbles:true}));}
+        const keys=['w','d','s','a']; const next=keys[step++%4];
+        release();pressed=next;window.dispatchEvent(new KeyboardEvent('keydown',{key:next,code:'Key'+next.toUpperCase(),bubbles:true}));
+        movementReleaseTimer=setTimeout(()=>{movementReleaseTimer=null;release();},Number(movementStep.value));
       }else release();
       afkStatus.textContent='Running · completed/restarted: '+runs+' · '+(movement.checked?'movement experimental':'movement off');
     };
@@ -411,7 +416,7 @@
       #ps-damage-panel.ps-pokedex label {color:#f5f6ec !important;line-height:1.8}
       #ps-damage-panel.ps-pokedex #ps-damage-status {background:#b9ddcc;color:#204940 !important;border-radius:6px;padding:8px;max-width:none !important;word-break:break-word}
       #ps-damage-panel.ps-pokedex > div:nth-of-type(2)::after {
-        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.10';display:block;
+        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.10.1';display:block;
         color:#83d9b3;font-size:9px;letter-spacing:1px;margin-top:12px;text-align:center;
       }
     `;
