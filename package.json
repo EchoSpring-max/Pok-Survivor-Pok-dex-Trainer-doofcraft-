@@ -1,7 +1,7 @@
 {
   "name": "pokesurvivor-desktop",
-  "version": "1.0.0",
-  "description": "An unofficial, security-conscious desktop client for PokéSurvivor with a local script loader.",
+  "version": "1.1.0",
+  "description": "An unofficial PokéSurvivor desktop client with a built-in Pokédex trainer.",
   "main": "src/main.js",
   "author": "Community project",
   "license": "MIT",
@@ -10,7 +10,7 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "test": "node --test",
-    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/script-store.js",
+    "check": "node --check src/main.js && node --check src/preload.js && node --check src/renderer.js && node --check src/builtin-trainer.js",
     "dist": "electron-builder --win portable",
     "dist:installer": "electron-builder --win nsis"
   },

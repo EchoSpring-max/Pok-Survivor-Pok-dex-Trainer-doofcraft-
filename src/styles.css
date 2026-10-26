@@ -69,6 +69,16 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .sidebar-toggle { position: absolute; z-index: 10; top: 30px; right: 20px; width: 30px; height: 30px; border-radius: 7px; color: #aebbc1; background: var(--surface); border: 1px solid var(--line); font-size: 21px; line-height: 1; font-weight: 800; transition: transform .15s, background .15s; }
 .sidebar-toggle:hover { color: var(--text); background: var(--surface-2); border-color: #465861; }
 .scripts-body { display: flex; flex-direction: column; min-height: 0; flex: 1 1 auto; }
+.trainer-badge { display: inline-flex; align-items: center; gap: 5px; color: #9de2bb; background: #193226; border: 1px solid #315d45; border-radius: 20px; padding: 5px 8px; font-size: 9px; font-weight: 800; }
+.trainer-badge i { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+.trainer-card { display: flex; align-items: center; gap: 13px; min-height: 82px; margin-bottom: 10px; padding: 12px; color: #fff8ed; border: 4px solid #861d2b; border-bottom-width: 7px; border-radius: 15px 15px 19px 15px; background: linear-gradient(145deg, #f54f54, #cb2839 52%, #a81d31); box-shadow: inset 2px 2px 0 #ff9691, inset -2px -2px 0 #741629, 0 9px 20px #0006; }
+.trainer-lens { width: 43px; height: 43px; flex: 0 0 auto; border: 5px solid #f2f8fb; border-radius: 50%; background: radial-gradient(circle at 35% 27%, #e6ffff 0 12%, #69caff 28%, #1479ca 70%, #074775 100%); box-shadow: 0 0 0 3px #6d202d, 0 0 12px #84e8ff; }
+.trainer-card strong { display: block; font-size: 13px; letter-spacing: .04em; text-shadow: 1px 2px #7f2130; }
+.trainer-card span { display: block; margin-top: 5px; color: #ffe4dc; font-size: 9px; line-height: 1.4; }
+.trainer-open { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 10px 12px; }
+.trainer-open kbd { color: #f7e9cd; background: #33260f; border: 1px solid #6b5222; border-radius: 4px; padding: 2px 5px; font: 9px ui-monospace, monospace; }
+.trainer-features { margin: 12px 0 0; padding: 0; list-style: none; color: #aab8bf; font-size: 10px; line-height: 1.7; }
+.trainer-features li::before { content: "✓"; margin-right: 7px; color: var(--green); font-weight: 900; }
 body.sidebar-collapsed main { padding: 0; align-items: center; background: linear-gradient(180deg, #151c20, #0d1215); }
 body.sidebar-collapsed main > :not(.sidebar-toggle) { visibility: hidden; pointer-events: none; }
 body.sidebar-collapsed .sidebar-toggle { position: absolute; visibility: visible; top: 18px; right: 10px; transform: rotate(180deg); }

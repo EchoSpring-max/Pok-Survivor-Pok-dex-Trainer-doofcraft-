@@ -55,31 +55,32 @@
         <output id="audio-value" for="audio-volume">100%</output>
       </section>
 
-      <section class="scripts-section">
+      <section class="scripts-section trainer-section">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">LOCAL ONLY</p>
-            <h2>Script loader</h2>
+            <p class="eyebrow">BUILT IN</p>
+            <h2>Pokédex Trainer</h2>
           </div>
-          <div class="section-heading-actions">
-            <button id="import" class="primary-button">+ Import</button>
-          </div>
+          <span class="trainer-badge"><i></i> Active</span>
         </div>
 
-        <div id="scripts-body" class="scripts-body">
-          <p class="warning">Scripts run with access to the game page and your signed-in session. Remembered scripts run once when the client starts, not after page refreshes. Only import code you trust.</p>
-
-          <div id="script-list" class="script-list" aria-live="polite"></div>
-          <div id="empty-state" class="empty-state">
-            <div class="empty-icon">JS</div>
-            <p>No scripts imported</p>
-            <span>Add a local .js file to get started.</span>
+        <div class="scripts-body">
+          <div class="trainer-card">
+            <div class="trainer-lens"></div>
+            <div>
+              <strong>Trainer v1.10.1</strong>
+              <span>Damage, speed, Candy Corn, god mode and AFK tools.</span>
+            </div>
           </div>
 
-          <section class="actions">
-            <button id="stop-all" class="danger-button">■ Stop all scripts</button>
-            <button id="folder" class="secondary-button">Open scripts folder</button>
-          </section>
+          <p class="warning">The trainer is part of this client and loads automatically with the game. Its controls update the running game dynamically.</p>
+          <button id="toggle-trainer" class="primary-button trainer-open">Open / hide trainer <kbd>F8</kbd></button>
+
+          <ul class="trainer-features">
+            <li>Live gameplay multipliers</li>
+            <li>AFK upgrades, bonding and solo rifts</li>
+            <li>Compact Pokédex overlay</li>
+          </ul>
         </div>
       </section>
 
@@ -91,7 +92,7 @@
         <div id="log" class="log" aria-live="polite"></div>
       </section>
 
-      <footer>Your login is stored in this Windows account's persistent app profile. Scripts that return a function can clean up when stopped. This project is not affiliated with DoofCraft or Pokémon.</footer>
+      <footer>Your login and trainer settings are stored in this Windows account's persistent app profile. This project is not affiliated with DoofCraft or Pokémon.</footer>
     </main>
     <script src="renderer.js"></script>
   </body>

@@ -1,15 +1,15 @@
 # PokéSurvivor Desktop
 
-An unofficial Windows desktop client for [PokéSurvivor](https://pokesurvivor.doofcraft.com/) with a built-in local JavaScript loader.
+An unofficial Windows desktop client for [PokéSurvivor](https://pokesurvivor.doofcraft.com/) with the Pokédex Trainer built in.
 
 ## Features
 
-- Isolated game view with Node.js disabled, context isolation, sandboxing, origin-locked navigation, blocked popups, and denied permission requests.
-- Local `.js` imports only; the client never downloads scripts from a URL.
-- Userscripts declaring `@run-at document-start` are injected before the game's own page scripts, so early hooks such as `window.Worker` wrappers work. Pressing Run performs one controlled reload for these scripts.
-- Persistent run/stop state: running a script remembers it for future client launches and runs it once at startup. Page reloads do not automatically run it again; stopping it disables startup. Includes reload/home controls, a detached developer console, and an emergency stop-all action.
-- Per-script cleanup: return a function from a script and the client calls it when the script is stopped, disabled, rerun, or removed.
-- Persistent game login, cookies, site storage, and script preferences across client restarts and upgrades.
+- Sandboxed game view with Node.js disabled, origin-locked navigation, blocked popups, and denied permission requests.
+- Built-in Pokédex Trainer loaded automatically at document start, with live damage, speed, Candy Corn, god-mode, AFK, bonding, and solo-rift controls.
+- Pokédex-styled trainer overlay that can be opened or hidden from the sidebar or with F8.
+- Background throttling and app suspension disabled so the game keeps running when minimized or unfocused.
+- Persistent game login, cookies, site storage, and trainer preferences across client restarts and upgrades.
+- Reload/home controls and a detached developer console.
 - Optional Discord Rich Presence with reconnect handling, current screen status, elapsed play time, and a play button.
 - Persistent game volume slider and mute control.
 
@@ -33,30 +33,14 @@ npm run dist
 
 The build is written to `outputs/`.
 
-## Script format
+## Standalone userscript
 
-Scripts execute in the PokéSurvivor page. Add an optional display name and return an optional cleanup function:
-
-```js
-// @name My UI tweak
-
-const element = document.createElement('div');
-element.textContent = 'Hello';
-document.body.appendChild(element);
-
-return () => element.remove();
-```
-
-See [`examples/hello-overlay.js`](examples/hello-overlay.js) for a complete harmless example.
-
-## Existing userscript
-
-The current standalone trainer is [`PokeSurvivor-Pokedex-Trainer.user.js`](PokeSurvivor-Pokedex-Trainer.user.js). The `.js` copy is retained for compatibility. It is not bundled into the desktop executable or enabled automatically. If you choose to use it, review the source, import it manually, and follow the game's rules.
+The same trainer remains available as [`PokeSurvivor-Pokedex-Trainer.user.js`](PokeSurvivor-Pokedex-Trainer.user.js) for regular browsers. The desktop executable bundles its own copy automatically.
 
 ## Security note
 
-A loaded script has the same page access as code running on the game website, including access to visible game state and browser storage. Only run scripts you understand and trust. The desktop client deliberately does not include a remote script marketplace, URL installer, or bundled game automation.
+The built-in trainer has page-level access to visible game state and the game's browser storage. The client does not download or execute trainer code from remote URLs.
 
 ## Disclaimer
 
-This community project is not affiliated with DoofCraft, PokéSurvivor, Nintendo, Creatures Inc., GAME FREAK, or The Pokémon Company. Follow the game's rules when using custom scripts.
+This community project is not affiliated with DoofCraft, PokéSurvivor, Nintendo, Creatures Inc., GAME FREAK, or The Pokémon Company. Follow the game's rules when using the trainer.
