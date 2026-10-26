@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PokéSurvivor • Pokédex Trainer
 // @namespace    https://github.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-
-// @version      1.8.5
+// @version      1.8.6
 // @description  Unofficial Pokédex-style trainer featuring gameplay controls, AFK tools and customizable auto-upgrades.
 // @author       EchoSpring-max
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACP0lEQVR42u2bPU4DMRCFdy0XkVIBUiQQcABaThBRcwg67kDNHeg4RGrECWg5ACCQIgEVEh1UiSzHsT32G//FU0FY7Pme39gTyTsMPXrsdIwh/3R9cPxXIszd59vIJkCp0LFiiBbhKTmPIQNdzWZFQt8vl2QnjBT4UsFdQthEEK3Bm3K1lYNoDZ4qgmgRniKCpAyAiKP9Pecz71/fUBFMm6OXACmhtz2PFMN5CqgWQaw+FZzTFaoL1FNBlrDilDHRjhA1wHOOL2sB53KDqA0ePa+oFR41vxh2PETNq4/IQ9QOH5tPL4EWVj8mr513gMy1+uevHxufPZ0cQlxAaZBkasVN4PrfEEIUWQI2+JDnkgsQY38qVIwIlDxlqqRMcfvwuP755mIOnW8xnZR9Cqjwpt+b3ANcsDlE6J1gFyBDmDY82+dNOkCHzQEf1Qm+PNM2rNOzOXnFEXNAHaCerdTJqDAx8L49QPIS8IWiwmcpgVgRTA5KCR4swGI6GS5/ftcQoUkjYUPt3/uAUAFiNkN0xKw+zAG5REDMGyxAiNqcEZqPQE2a2gWx1mfZBFOJgJxHIqy3OhbV5DjOdBN4bCkKrvpDu4EDHtoJrpJBu4ELnK0V1ktCh/ARw+Ye9OmzcYcWeVNMFyLHMTcM22+IsX8ZMpVFaf2GdCmHuC+oQviIgYS23RI1loBeBohSyBU+1+aNx6D+oEvFWuGtfUDNIlBemOivzPgMXONLUz7w3q1wyPt4NcB7O6AWR9S4UD16ZI5/0YX0gyZhTxcAAAAASUVORK5CYII=
@@ -43,23 +43,37 @@
           status = `Worker request failed (${xhr.status || 'network error'})`; update();
           return Reflect.construct(Target, args);
         }
+        const applied = [];
         const missing = [];
-        if (!damageSignature.test(xhr.responseText)) missing.push('damage');
-        if (!xhr.responseText.includes(speedSignature)) missing.push('speed');
-        if (god && !godSignature.test(xhr.responseText)) missing.push('god mode');
-        if (candy !== 1 && !xhr.responseText.includes(candySignature)) missing.push('candy');
-        if (missing.length) {
-          status = `Worker found; outdated patch: ${missing.join(', ')}`; update();
+        let source = xhr.responseText;
+        if (damageSignature.test(source)) {
+          source = source.replace(damageSignature, `$1*${multiplier}*`);
+          applied.push(`damage ×${multiplier}`);
+        } else missing.push('damage');
+        if (source.includes(speedSignature)) {
+          source = source.replace(speedSignature, `baseSpeed:a.speed*${speed},baseAttack:a.attack`);
+          applied.push(`speed ×${speed}`);
+        } else missing.push('speed');
+        if (candy !== 1) {
+          if (source.includes(candySignature)) {
+            source = source.replace(candySignature, candySignature.replaceAll('t.value', `(t.value*${candy})`));
+            applied.push(`candy pickups ×${candy}`);
+          } else missing.push('candy');
+        }
+        if (god) {
+          if (godSignature.test(source)) {
+            source = source.replace(godSignature, '$1n=0,t.hp-=n,');
+            applied.push('god mode');
+          } else missing.push('god mode');
+        }
+        if (!applied.length) {
+          status = `Worker found; no compatible patches (${missing.join(', ')})`; update();
           return Reflect.construct(Target, args);
         }
-        let source = xhr.responseText.replace(damageSignature, `$1*${multiplier}*`);
-        source = source.replace(speedSignature, `baseSpeed:a.speed*${speed},baseAttack:a.attack`);
-        if (candy !== 1) source = source.replace(candySignature, candySignature.replaceAll('t.value', `(t.value*${candy})`));
-        if (god) source = source.replace(godSignature, '$1n=0,t.hp-=n,');
         const blobUrl = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
         const worker = Reflect.construct(Target, [blobUrl, args[1]]);
         setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
-        status = `Patches injected: damage ×${multiplier}, speed ×${speed}, candy pickups ×${candy}, god mode ${god ? "on" : "off"} (unverified)`; update();
+        status = `Injected: ${applied.join(', ')}${missing.length ? ` · unavailable: ${missing.join(', ')}` : ''}`; update();
         return worker;
       } catch (error) {
         status = `Patch error: ${error.message}`; update();
@@ -131,7 +145,7 @@
     const candyLabel = document.createElement('label'); candyLabel.textContent = 'Candy Corn pickups: ×';
     const candyInput = document.createElement('input'); candyInput.type = 'number'; candyInput.min = '1'; candyInput.max = '100'; candyInput.step = '1'; candyInput.value = String(candy); candyInput.style.cssText = 'width:75px;margin-left:6px;padding:4px';
     candyRow.append(candyLabel, candyInput); content.append(candyRow);
-    const candyNote = document.createElement('div'); candyNote.textContent = 'Experimental: modifies collected candy pickups locally. Server may reject or recalculate rewards.'; candyNote.style.cssText = 'font-size:11px;color:#fbbf24;margin-top:5px;max-width:240px'; content.append(candyNote);
+    const candyNote = document.createElement('div'); candyNote.textContent = 'Multiplies Candy Corn credited by the local game worker and included in the run result. The server may still validate the final reward.'; candyNote.style.cssText = 'font-size:11px;color:#fbbf24;margin-top:5px;max-width:240px'; content.append(candyNote);
     const apply = document.createElement('button'); apply.textContent = desktopClient ? 'Save settings' : 'Save & reload'; apply.style.cssText = 'margin-top:10px;padding:6px 12px;cursor:pointer';
     apply.onclick = () => {
       const n = Number(input.value);

@@ -4,19 +4,15 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-test('trainer patches the current minified worker signatures', () => {
-  const workerSource = [
-    'jy=(e,t)=>t.baseAttack*t.attackMul*Ay(t,`attack`)',
-    '({baseSpeed:a.speed,baseAttack:a.attack})',
-    'case`candy-corn`:t.sharedCandyCorn===!1?n.stats.candyCorn=(n.stats.candyCorn??0)+t.value:r.team.candyCorn=(r.team.candyCorn??0)+t.value;return;',
-    'function Yy(e,t,n,r,a){if(t.hp-=n,aS(e,t,n,a))return}'
-  ].join(';');
+const candySignature = 'case`candy-corn`:t.sharedCandyCorn===!1?n.stats.candyCorn=(n.stats.candyCorn??0)+t.value:r.team.candyCorn=(r.team.candyCorn??0)+t.value;return;';
+
+function runTrainer(workerSource, settings = {}) {
   let patchedSource = '';
   const values = new Map([
-    ['ps-damage-multiplier', '7'],
-    ['ps-speed-multiplier', '2'],
-    ['ps-candy-multiplier', '3'],
-    ['ps-trainer-god', 'true']
+    ['ps-damage-multiplier', settings.damage ?? '7'],
+    ['ps-speed-multiplier', settings.speed ?? '2'],
+    ['ps-candy-multiplier', settings.candy ?? '3'],
+    ['ps-trainer-god', settings.god ?? 'true']
   ]);
 
   class FakeWorker {
@@ -68,9 +64,28 @@ test('trainer patches the current minified worker signatures', () => {
   vm.runInContext(trainer, context);
 
   const worker = new context.window.Worker('/worker-BOmdoHt1.js', { type: 'module' });
+  return { patchedSource, worker };
+}
+
+test('trainer patches the current minified worker signatures', () => {
+  const workerSource = [
+    'jy=(e,t)=>t.baseAttack*t.attackMul*Ay(t,`attack`)',
+    '({baseSpeed:a.speed,baseAttack:a.attack})',
+    candySignature,
+    'function Yy(e,t,n,r,a){if(t.hp-=n,aS(e,t,n,a))return}'
+  ].join(';');
+  const { patchedSource, worker } = runTrainer(workerSource);
+
   assert.equal(worker.url, 'blob:patched-worker');
   assert.match(patchedSource, /baseAttack\*t\.attackMul\*7\*/);
   assert.match(patchedSource, /baseSpeed:a\.speed\*2,baseAttack:a\.attack/);
   assert.match(patchedSource, /candyCorn=\(n\.stats\.candyCorn\?\?0\)\+\(t\.value\*3\)/);
   assert.match(patchedSource, /function Yy\(e,t,n,r,a\)\{if\(n=0,t\.hp-=n,/);
+});
+
+test('candy patch still applies when unrelated signatures are unavailable', () => {
+  const { patchedSource, worker } = runTrainer(candySignature);
+
+  assert.equal(worker.url, 'blob:patched-worker');
+  assert.match(patchedSource, /candyCorn=\(n\.stats\.candyCorn\?\?0\)\+\(t\.value\*3\)/);
 });
