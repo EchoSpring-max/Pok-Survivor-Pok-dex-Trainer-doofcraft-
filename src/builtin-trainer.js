@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PokéSurvivor • Pokédex Trainer
 // @namespace    https://github.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-
-// @version      1.11.0
+// @version      1.11.1
 // @description  Unofficial Pokédex-style trainer featuring gameplay controls, AFK tools and customizable auto-upgrades.
 // @author       EchoSpring-max
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACP0lEQVR42u2bPU4DMRCFdy0XkVIBUiQQcABaThBRcwg67kDNHeg4RGrECWg5ACCQIgEVEh1UiSzHsT32G//FU0FY7Pme39gTyTsMPXrsdIwh/3R9cPxXIszd59vIJkCp0LFiiBbhKTmPIQNdzWZFQt8vl2QnjBT4UsFdQthEEK3Bm3K1lYNoDZ4qgmgRniKCpAyAiKP9Pecz71/fUBFMm6OXACmhtz2PFMN5CqgWQaw+FZzTFaoL1FNBlrDilDHRjhA1wHOOL2sB53KDqA0ePa+oFR41vxh2PETNq4/IQ9QOH5tPL4EWVj8mr513gMy1+uevHxufPZ0cQlxAaZBkasVN4PrfEEIUWQI2+JDnkgsQY38qVIwIlDxlqqRMcfvwuP755mIOnW8xnZR9Cqjwpt+b3ANcsDlE6J1gFyBDmDY82+dNOkCHzQEf1Qm+PNM2rNOzOXnFEXNAHaCerdTJqDAx8L49QPIS8IWiwmcpgVgRTA5KCR4swGI6GS5/ftcQoUkjYUPt3/uAUAFiNkN0xKw+zAG5REDMGyxAiNqcEZqPQE2a2gWx1mfZBFOJgJxHIqy3OhbV5DjOdBN4bCkKrvpDu4EDHtoJrpJBu4ELnK0V1ktCh/ARw+Ye9OmzcYcWeVNMFyLHMTcM22+IsX8ZMpVFaf2GdCmHuC+oQviIgYS23RI1loBeBohSyBU+1+aNx6D+oEvFWuGtfUDNIlBemOivzPgMXONLUz7w3q1wyPt4NcB7O6AWR9S4UD16ZI5/0YX0gyZhTxcAAAAASUVORK5CYII=
@@ -21,7 +21,7 @@
   let speed = Number(localStorage.getItem('ps-speed-multiplier') || '1');
   if (!Number.isFinite(speed) || speed < 1 || speed > 20) speed = 1;
   let timeScale = Number(localStorage.getItem('ps-time-scale') || '1');
-  if (!Number.isFinite(timeScale) || timeScale < 0.5 || timeScale > 2) timeScale = 1;
+  if (!Number.isFinite(timeScale) || timeScale < 0.5 || timeScale > 5) timeScale = 1;
   const candySignature = 'case`candy-corn`:t.sharedCandyCorn===!1?n.stats.candyCorn=(n.stats.candyCorn??0)+t.value:r.team.candyCorn=(r.team.candyCorn??0)+t.value;return;';
   const riftSignature = 'o(n).find(e=>!e.dead&&U(e.x,e.y,c.x,c.y-10)<900)&&Gm(e)';
   let candy = Number(localStorage.getItem('ps-candy-multiplier') || '1');
@@ -169,7 +169,7 @@
     speedRow.append(speedLabel, speedInput); content.append(speedRow);
     const timeRow = document.createElement('div'); timeRow.style.marginTop = '12px';
     const timeLabel = document.createElement('label'); timeLabel.textContent = `Game time scale: ×${timeScale}`;
-    const timeInput = document.createElement('input'); timeInput.type = 'range'; timeInput.min = '0.5'; timeInput.max = '2'; timeInput.step = '0.25'; timeInput.value = String(timeScale);
+    const timeInput = document.createElement('input'); timeInput.type = 'range'; timeInput.min = '0.5'; timeInput.max = '5'; timeInput.step = '0.25'; timeInput.value = String(timeScale);
     timeInput.oninput = () => { timeLabel.textContent = `Game time scale: ×${Number(timeInput.value).toFixed(2).replace(/0+$/,'').replace(/\.$/,'')}`; };
     timeRow.append(timeLabel, timeInput); content.append(timeRow);
     const candyRow = document.createElement('div'); candyRow.style.marginTop = '12px';
@@ -434,7 +434,7 @@
       #ps-damage-panel.ps-pokedex label {color:#f5f6ec !important;line-height:1.8}
       #ps-damage-panel.ps-pokedex #ps-damage-status {background:#b9ddcc;color:#204940 !important;border-radius:6px;padding:8px;max-width:none !important;word-break:break-word}
       #ps-damage-panel.ps-pokedex > div:nth-of-type(2)::after {
-        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.11.0';display:block;
+        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.11.1';display:block;
         color:#83d9b3;font-size:9px;letter-spacing:1px;margin-top:12px;text-align:center;
       }
     `;

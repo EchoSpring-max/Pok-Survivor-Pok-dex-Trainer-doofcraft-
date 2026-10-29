@@ -9,7 +9,7 @@ test('desktop bundles the current standalone trainer', () => {
   const builtIn = fs.readFileSync(path.join(root, 'src', 'builtin-trainer.js'), 'utf8');
 
   assert.equal(builtIn, standalone);
-  assert.match(builtIn, /@version\s+1\.11\.0/);
+  assert.match(builtIn, /@version\s+1\.11\.1/);
   assert.match(builtIn, /Game time scale/);
   assert.match(builtIn, /dynamic time scale/);
   assert.match(builtIn, /overflow:hidden !important/);
