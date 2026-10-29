@@ -94,7 +94,7 @@ test('candy patch still applies when unrelated signatures are unavailable', () =
 });
 
 test('AFK rifts are gated by the trainer control message and solo play', () => {
-  const riftSource = 'o(n).find(e=>!e.dead&&H(e.x,e.y,c.x,c.y-10)<900)&&zm(e)';
+  const riftSource = 'o(n).find(e=>!e.dead&&U(e.x,e.y,c.x,c.y-10)<900)&&Gm(e)';
   const { patchedSource, worker } = runTrainer(riftSource, { rifts: 'true' });
 
   assert.equal(worker.url, 'blob:patched-worker');
@@ -108,7 +108,7 @@ test('AFK rifts are gated by the trainer control message and solo play', () => {
   }}]));
   assert.match(patchedSource, /__psTrainerControl/);
   assert.match(patchedSource, /__psTrainerConfig\?\.autoRifts&&globalThis\.__psTrainerConfig\?\.afk&&o\(n\)\.length===1/);
-  assert.match(patchedSource, /o\(n\)\.some\(e=>!e\.dead/);
+  assert.match(patchedSource, /o\(n\)\.some\(e=>!e\.dead&&U\(e\.x,e\.y,c\.x,c\.y-10\)<900\)\)\&\&Gm\(e\)/);
 });
 
 test('auto movement uses a configurable short pulse for each square step', () => {

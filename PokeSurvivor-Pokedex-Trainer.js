@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PokéSurvivor • Pokédex Trainer
 // @namespace    https://github.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-
-// @version      1.10.2
+// @version      1.10.3
 // @description  Unofficial Pokédex-style trainer featuring gameplay controls, AFK tools and customizable auto-upgrades.
 // @author       EchoSpring-max
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACP0lEQVR42u2bPU4DMRCFdy0XkVIBUiQQcABaThBRcwg67kDNHeg4RGrECWg5ACCQIgEVEh1UiSzHsT32G//FU0FY7Pme39gTyTsMPXrsdIwh/3R9cPxXIszd59vIJkCp0LFiiBbhKTmPIQNdzWZFQt8vl2QnjBT4UsFdQthEEK3Bm3K1lYNoDZ4qgmgRniKCpAyAiKP9Pecz71/fUBFMm6OXACmhtz2PFMN5CqgWQaw+FZzTFaoL1FNBlrDilDHRjhA1wHOOL2sB53KDqA0ePa+oFR41vxh2PETNq4/IQ9QOH5tPL4EWVj8mr513gMy1+uevHxufPZ0cQlxAaZBkasVN4PrfEEIUWQI2+JDnkgsQY38qVIwIlDxlqqRMcfvwuP755mIOnW8xnZR9Cqjwpt+b3ANcsDlE6J1gFyBDmDY82+dNOkCHzQEf1Qm+PNM2rNOzOXnFEXNAHaCerdTJqDAx8L49QPIS8IWiwmcpgVgRTA5KCR4swGI6GS5/ftcQoUkjYUPt3/uAUAFiNkN0xKw+zAG5REDMGyxAiNqcEZqPQE2a2gWx1mfZBFOJgJxHIqy3OhbV5DjOdBN4bCkKrvpDu4EDHtoJrpJBu4ELnK0V1ktCh/ARw+Ye9OmzcYcWeVNMFyLHMTcM22+IsX8ZMpVFaf2GdCmHuC+oQviIgYS23RI1loBeBohSyBU+1+aNx6D+oEvFWuGtfUDNIlBemOivzPgMXONLUz7w3q1wyPt4NcB7O6AWR9S4UD16ZI5/0YX0gyZhTxcAAAAASUVORK5CYII=
@@ -21,7 +21,7 @@
   let speed = Number(localStorage.getItem('ps-speed-multiplier') || '1');
   if (!Number.isFinite(speed) || speed < 1 || speed > 20) speed = 1;
   const candySignature = 'case`candy-corn`:t.sharedCandyCorn===!1?n.stats.candyCorn=(n.stats.candyCorn??0)+t.value:r.team.candyCorn=(r.team.candyCorn??0)+t.value;return;';
-  const riftSignature = 'o(n).find(e=>!e.dead&&H(e.x,e.y,c.x,c.y-10)<900)&&zm(e)';
+  const riftSignature = 'o(n).find(e=>!e.dead&&U(e.x,e.y,c.x,c.y-10)<900)&&Gm(e)';
   let candy = Number(localStorage.getItem('ps-candy-multiplier') || '1');
   if (!Number.isInteger(candy) || candy < 1 || candy > 100) candy = 1;
   let autoRifts = localStorage.getItem('ps-afk-rifts') === 'true';
@@ -78,7 +78,7 @@
           applied.push('dynamic god mode');
         } else missing.push('god mode');
         if (source.includes(riftSignature)) {
-          source = source.replace(riftSignature, '(globalThis.__psTrainerConfig?.autoRifts&&globalThis.__psTrainerConfig?.afk&&o(n).length===1||o(n).some(e=>!e.dead&&H(e.x,e.y,c.x,c.y-10)<900))&&zm(e)');
+          source = source.replace(riftSignature, '(globalThis.__psTrainerConfig?.autoRifts&&globalThis.__psTrainerConfig?.afk&&o(n).length===1||o(n).some(e=>!e.dead&&U(e.x,e.y,c.x,c.y-10)<900))&&Gm(e)');
           applied.push('dynamic AFK rifts');
         } else missing.push('AFK rifts');
         if (!applied.length) {
@@ -419,7 +419,7 @@
       #ps-damage-panel.ps-pokedex label {color:#f5f6ec !important;line-height:1.8}
       #ps-damage-panel.ps-pokedex #ps-damage-status {background:#b9ddcc;color:#204940 !important;border-radius:6px;padding:8px;max-width:none !important;word-break:break-word}
       #ps-damage-panel.ps-pokedex > div:nth-of-type(2)::after {
-        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.10.2';display:block;
+        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.10.3';display:block;
         color:#83d9b3;font-size:9px;letter-spacing:1px;margin-top:12px;text-align:center;
       }
     `;
