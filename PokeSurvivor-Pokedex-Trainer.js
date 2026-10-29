@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         PokéSurvivor • Pokédex Trainer
 // @namespace    https://github.com/EchoSpring-max/Pok-Survivor-Pok-dex-Trainer-doofcraft-
-// @version      1.10.3
+// @version      1.11.0
 // @description  Unofficial Pokédex-style trainer featuring gameplay controls, AFK tools and customizable auto-upgrades.
 // @author       EchoSpring-max
 // @icon         data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAACP0lEQVR42u2bPU4DMRCFdy0XkVIBUiQQcABaThBRcwg67kDNHeg4RGrECWg5ACCQIgEVEh1UiSzHsT32G//FU0FY7Pme39gTyTsMPXrsdIwh/3R9cPxXIszd59vIJkCp0LFiiBbhKTmPIQNdzWZFQt8vl2QnjBT4UsFdQthEEK3Bm3K1lYNoDZ4qgmgRniKCpAyAiKP9Pecz71/fUBFMm6OXACmhtz2PFMN5CqgWQaw+FZzTFaoL1FNBlrDilDHRjhA1wHOOL2sB53KDqA0ePa+oFR41vxh2PETNq4/IQ9QOH5tPL4EWVj8mr513gMy1+uevHxufPZ0cQlxAaZBkasVN4PrfEEIUWQI2+JDnkgsQY38qVIwIlDxlqqRMcfvwuP755mIOnW8xnZR9Cqjwpt+b3ANcsDlE6J1gFyBDmDY82+dNOkCHzQEf1Qm+PNM2rNOzOXnFEXNAHaCerdTJqDAx8L49QPIS8IWiwmcpgVgRTA5KCR4swGI6GS5/ftcQoUkjYUPt3/uAUAFiNkN0xKw+zAG5REDMGyxAiNqcEZqPQE2a2gWx1mfZBFOJgJxHIqy3OhbV5DjOdBN4bCkKrvpDu4EDHtoJrpJBu4ELnK0V1ktCh/ARw+Ye9OmzcYcWeVNMFyLHMTcM22+IsX8ZMpVFaf2GdCmHuC+oQviIgYS23RI1loBeBohSyBU+1+aNx6D+oEvFWuGtfUDNIlBemOivzPgMXONLUz7w3q1wyPt4NcB7O6AWR9S4UD16ZI5/0YX0gyZhTxcAAAAASUVORK5CYII=
@@ -20,6 +20,8 @@
   const speedSignature = /([A-Za-z_$][\w$]*=e=>e\.speedMul\*[A-Za-z_$][\w$]*\(e,`speed`\))/;
   let speed = Number(localStorage.getItem('ps-speed-multiplier') || '1');
   if (!Number.isFinite(speed) || speed < 1 || speed > 20) speed = 1;
+  let timeScale = Number(localStorage.getItem('ps-time-scale') || '1');
+  if (!Number.isFinite(timeScale) || timeScale < 0.5 || timeScale > 2) timeScale = 1;
   const candySignature = 'case`candy-corn`:t.sharedCandyCorn===!1?n.stats.candyCorn=(n.stats.candyCorn??0)+t.value:r.team.candyCorn=(r.team.candyCorn??0)+t.value;return;';
   const riftSignature = 'o(n).find(e=>!e.dead&&U(e.x,e.y,c.x,c.y-10)<900)&&Gm(e)';
   let candy = Number(localStorage.getItem('ps-candy-multiplier') || '1');
@@ -38,6 +40,7 @@
     activeWorker.postMessage({__psTrainerControl:{
       damage: multiplier,
       speed,
+      timeScale,
       candy,
       god,
       autoRifts,
@@ -61,6 +64,11 @@
         const applied = [];
         const missing = [];
         let source = xhr.responseText;
+        const clockSignature = 'ww=()=>Cw.performance.now()';
+        if (source.includes(clockSignature)) {
+          source = source.replace(clockSignature, 'ww=()=>{let c=globalThis.__psTrainerConfig,s=c?.timeScale??1,n=Cw.performance.now(),p=globalThis.__psTrainerClock;if(!p||p.scale!==s){p={scale:s,real:n,game:p?p.game:n};globalThis.__psTrainerClock=p}p.game+=(n-p.real)*p.scale;p.real=n;return p.game}');
+          applied.push('dynamic time scale');
+        } else missing.push('time scale');
         if (damageSignature.test(source)) {
           source = source.replace(damageSignature, '$1*(globalThis.__psTrainerConfig?.damage??1)*');
           applied.push('dynamic damage');
@@ -85,7 +93,7 @@
           status = `Worker found; no compatible patches (${missing.join(', ')})`; update();
           return Reflect.construct(Target, args);
         }
-        source = 'globalThis.__psTrainerConfig={damage:1,speed:1,candy:1,god:false,autoRifts:false,afk:false};self.addEventListener("message",e=>{if(e.data?.__psTrainerControl){Object.assign(globalThis.__psTrainerConfig,e.data.__psTrainerControl);e.stopImmediatePropagation()}},true);\n' + source;
+        source = 'globalThis.__psTrainerConfig={damage:1,speed:1,timeScale:1,candy:1,god:false,autoRifts:false,afk:false};self.addEventListener("message",e=>{if(e.data?.__psTrainerControl){Object.assign(globalThis.__psTrainerConfig,e.data.__psTrainerControl);e.stopImmediatePropagation()}},true);\n' + source;
         const blobUrl = URL.createObjectURL(new Blob([source], {type:'text/javascript'}));
         const worker = Reflect.construct(Target, [blobUrl, args[1]]);
         activeWorker = worker;
@@ -159,6 +167,11 @@
     const speedLabel = document.createElement('label'); speedLabel.textContent = 'Movement speed: ×';
     const speedInput = document.createElement('input'); speedInput.type = 'number'; speedInput.min = '1'; speedInput.max = '20'; speedInput.step = '0.5'; speedInput.value = String(speed); speedInput.style.cssText = 'width:75px;margin-left:6px;padding:4px';
     speedRow.append(speedLabel, speedInput); content.append(speedRow);
+    const timeRow = document.createElement('div'); timeRow.style.marginTop = '12px';
+    const timeLabel = document.createElement('label'); timeLabel.textContent = `Game time scale: ×${timeScale}`;
+    const timeInput = document.createElement('input'); timeInput.type = 'range'; timeInput.min = '0.5'; timeInput.max = '2'; timeInput.step = '0.25'; timeInput.value = String(timeScale);
+    timeInput.oninput = () => { timeLabel.textContent = `Game time scale: ×${Number(timeInput.value).toFixed(2).replace(/0+$/,'').replace(/\.$/,'')}`; };
+    timeRow.append(timeLabel, timeInput); content.append(timeRow);
     const candyRow = document.createElement('div'); candyRow.style.marginTop = '12px';
     const candyLabel = document.createElement('label'); candyLabel.textContent = 'Candy Corn pickups: ×';
     const candyInput = document.createElement('input'); candyInput.type = 'number'; candyInput.min = '1'; candyInput.max = '100'; candyInput.step = '1'; candyInput.value = String(candy); candyInput.style.cssText = 'width:75px;margin-left:6px;padding:4px';
@@ -172,13 +185,15 @@
       if (!Number.isFinite(sp) || sp < 1 || sp > 20) {status='Choose movement speed from 1 to 20';update();return;}
       const ca = Number(candyInput.value);
       if (!Number.isInteger(ca) || ca < 1 || ca > 100) {status='Choose Candy Corn multiplier from 1 to 100';update();return;}
+      const ts = Number(timeInput.value);
       localStorage.setItem('ps-candy-multiplier', String(ca));
       localStorage.setItem('ps-speed-multiplier', String(sp));
       localStorage.setItem('ps-damage-multiplier', String(n));
       localStorage.setItem('ps-trainer-god', String(godBox.checked));
-      multiplier=n;speed=sp;candy=ca;god=godBox.checked;
+      localStorage.setItem('ps-time-scale', String(ts));
+      multiplier=n;speed=sp;candy=ca;god=godBox.checked;timeScale=ts;
       status = syncAfkWorker()
-        ? `Applied live: damage ×${multiplier}, speed ×${speed}, candy ×${candy}, god mode ${god?'on':'off'}`
+        ? `Applied live: damage ×${multiplier}, movement ×${speed}, time ×${timeScale}, candy ×${candy}, god mode ${god?'on':'off'}`
         : 'Settings saved. They will apply when the next run starts.';
       update();
     };
@@ -419,7 +434,7 @@
       #ps-damage-panel.ps-pokedex label {color:#f5f6ec !important;line-height:1.8}
       #ps-damage-panel.ps-pokedex #ps-damage-status {background:#b9ddcc;color:#204940 !important;border-radius:6px;padding:8px;max-width:none !important;word-break:break-word}
       #ps-damage-panel.ps-pokedex > div:nth-of-type(2)::after {
-        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.10.3';display:block;
+        content:'●  SYSTEM ONLINE       ◉  POKÉDEX v1.11.0';display:block;
         color:#83d9b3;font-size:9px;letter-spacing:1px;margin-top:12px;text-align:center;
       }
     `;

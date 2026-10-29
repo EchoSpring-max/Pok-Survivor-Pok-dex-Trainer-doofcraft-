@@ -11,6 +11,7 @@ function runTrainer(workerSource, settings = {}) {
   const values = new Map([
     ['ps-damage-multiplier', settings.damage ?? '7'],
     ['ps-speed-multiplier', settings.speed ?? '2'],
+    ['ps-time-scale', settings.timeScale ?? '1'],
     ['ps-candy-multiplier', settings.candy ?? '3'],
     ['ps-trainer-god', settings.god ?? 'true'],
     ['ps-afk-rifts', settings.rifts ?? 'false']
@@ -95,12 +96,13 @@ test('candy patch still applies when unrelated signatures are unavailable', () =
 
 test('AFK rifts are gated by the trainer control message and solo play', () => {
   const riftSource = 'o(n).find(e=>!e.dead&&U(e.x,e.y,c.x,c.y-10)<900)&&Gm(e)';
-  const { patchedSource, worker } = runTrainer(riftSource, { rifts: 'true' });
+  const { patchedSource, worker } = runTrainer(riftSource + ';ww=()=>Cw.performance.now()', { rifts: 'true' });
 
   assert.equal(worker.url, 'blob:patched-worker');
   assert.equal(JSON.stringify(worker.messages), JSON.stringify([{__psTrainerControl:{
     damage:7,
     speed:2,
+    timeScale:1,
     candy:3,
     god:true,
     autoRifts:true,
@@ -109,6 +111,8 @@ test('AFK rifts are gated by the trainer control message and solo play', () => {
   assert.match(patchedSource, /__psTrainerControl/);
   assert.match(patchedSource, /__psTrainerConfig\?\.autoRifts&&globalThis\.__psTrainerConfig\?\.afk&&o\(n\)\.length===1/);
   assert.match(patchedSource, /o\(n\)\.some\(e=>!e\.dead&&U\(e\.x,e\.y,c\.x,c\.y-10\)<900\)\)\&\&Gm\(e\)/);
+  assert.match(patchedSource, /ww=\(\)=>\{/);
+  assert.match(patchedSource, /p\.game\+=\(n-p\.real\)\*p\.scale/);
 });
 
 test('auto movement uses a configurable short pulse for each square step', () => {
